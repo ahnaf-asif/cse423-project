@@ -1,0 +1,38 @@
+# =========================
+# Python & Environment
+# =========================
+# Ignore the virtual environment created by uv!
+.venv/
+env/
+venv/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+.uv/
+
+# =========================
+# IDEs and Editors
+# =========================
+.vscode/
+*.code-workspace
+
+.idea/
+*.iws
+*.iml
+
+.DS_Store
+
+# =========================
+# Game Specifics (Optional but recommended)
+# =========================
+# If your game generates save files or logs locally, ignore them:
+# saves/
+# logs/
+# *.log
+
+# Note: We DO NOT ignore the assets folder. You want your shaders, models, 
+# and textures committed to Git so the game actually works when cloned!
