@@ -5,6 +5,7 @@
 .venv/
 env/
 venv/
+OpenGL/
 
 # Ignore Python cache files
 __pycache__/
