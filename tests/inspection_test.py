@@ -357,6 +357,20 @@ def showScreen():
     glutSwapBuffers()
 
 
+def check_collision(next_x, next_y):
+    """Checks if the player's next position would collide with any entity."""
+    # Player's collision radius
+    radius = player_transform.radius
+
+    for entity in entities:
+        collider = entity.get_collider()
+        if collider:
+            transform = entity.get_component("Transform")
+            if collider.intersects(transform, next_x, next_y, radius):
+                return True
+    return False
+
+
 def update(dt):
     global frame_count, target_student, target_desk_entity
     if current_state != STATE_PLAYING:
@@ -375,18 +389,35 @@ def update(dt):
     right_x = math.cos(yaw_r)
     right_y = -math.sin(yaw_r)
 
+    # Calculate intended movement
+    dx, dy = 0, 0
     if key_states[b"w"]:
-        player_transform.x += fwd_x * MOVE_SPEED * dt
-        player_transform.y += fwd_y * MOVE_SPEED * dt
+        dx += fwd_x * MOVE_SPEED * dt
+        dy += fwd_y * MOVE_SPEED * dt
     if key_states[b"s"]:
-        player_transform.x -= fwd_x * MOVE_SPEED * dt
-        player_transform.y -= fwd_y * MOVE_SPEED * dt
+        dx -= fwd_x * MOVE_SPEED * dt
+        dy -= fwd_y * MOVE_SPEED * dt
     if key_states[b"a"]:
-        player_transform.x -= right_x * MOVE_SPEED * dt
-        player_transform.y -= right_y * MOVE_SPEED * dt
+        dx -= right_x * MOVE_SPEED * dt
+        dy -= right_y * MOVE_SPEED * dt
     if key_states[b"d"]:
-        player_transform.x += right_x * MOVE_SPEED * dt
-        player_transform.y += right_y * MOVE_SPEED * dt
+        dx += right_x * MOVE_SPEED * dt
+        dy += right_y * MOVE_SPEED * dt
+
+    # Collision Check & Movement
+    next_x = player_transform.x + dx
+    next_y = player_transform.y + dy
+
+    if not check_collision(next_x, next_y):
+        player_transform.x = next_x
+        player_transform.y = next_y
+    else:
+        # Try sliding on X
+        if not check_collision(next_x, player_transform.y):
+            player_transform.x = next_x
+        # Try sliding on Y
+        elif not check_collision(player_transform.x, next_y):
+            player_transform.y = next_y
 
     if key_states["left"]:
         player_transform.yaw -= ROTATE_SPEED * dt
