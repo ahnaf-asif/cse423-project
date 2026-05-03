@@ -154,7 +154,6 @@ class UIRenderer:
         self.draw_text(w/2 - 120, h/2 + 20, "CONGRATULATIONS!", GLUT_BITMAP_TIMES_ROMAN_24)
         glColor3f(1, 1, 1)
         self.draw_text(w/2 - 150, h/2 - 20, "You successfully managed the exam!", GLUT_BITMAP_HELVETICA_18)
-        self.draw_text(w/2 - 100, h/2 - 60, "Final Time: 00:00", GLUT_BITMAP_HELVETICA_18)
 
         # Main Menu Button
         btn_w, btn_h = 200, 50

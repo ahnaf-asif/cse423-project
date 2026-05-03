@@ -351,6 +351,14 @@ class GameManager:
         self.disqualified_students.append((self.target_desk_entity.id, self.target_student))
         del self.target_desk_entity.components["AnimState"]
         
+        # Clear the desk items
+        desk_state = self.target_desk_entity.get_component("StudentDeskState")
+        if desk_state:
+            desk_state.exam_sheet.is_visible = False
+            desk_state.calculator.is_visible = False
+            desk_state.smartphone.is_visible = False
+            desk_state.cheatsheet.is_visible = False
+        
         self.target_student = None
         self.target_desk_entity = None
 
@@ -765,12 +773,13 @@ class GameManager:
         print("   NEW ROUND: ANOMALY ROLL")
         print("="*40)
         
-        if random.random() < 0.5:
+        # 65% chance for anomaly, 35% for normal
+        if random.random() < 0.65:
             # Anomaly Occurs
             # choice = self.anomaly_manager.pick_anomaly() # TEMPORARILY FORCING ANOMALIES
-            choice = "ExamSwap" # FORCED FOR TESTING
+            choice = random.choice(["Ghost", "PenSwap"])
             print(f"\n[Game] ROLL: ANOMALY SELECTED -> {choice} (FORCED FOR TESTING)")
-            affected = self.anomaly_manager.apply_anomaly(choice, self.entities)
+            affected = self.anomaly_manager.apply_anomaly(choice, self.entities, self)
             if not affected:
                 print("[Game] Roll failed (No eligible students). Room stays NORMAL.")
             else:
