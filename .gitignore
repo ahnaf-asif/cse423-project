@@ -37,3 +37,5 @@ __pycache__/
 
 # Note: We DO NOT ignore the assets folder. You want your shaders, models, 
 # and textures committed to Git so the game actually works when cloned!
+
+run.sh
