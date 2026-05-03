@@ -44,7 +44,6 @@ class StudentDeskRenderer:
                 glPopMatrix()
         glPopMatrix()
 
-        # Render attachments (they handle their own desk_transform)
         self.exam_sheet_renderer.render(transform, state.exam_sheet)
         self.calculator_renderer.render(transform, state.calculator)
         self.smartphone_renderer.render(transform, state.smartphone)
