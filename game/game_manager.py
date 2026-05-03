@@ -374,6 +374,21 @@ class GameManager:
                     self.is_round_active = False # Reset for next session
                     return
 
+    def check_collision(self, next_x, next_y):
+        """Checks if the player's next position would collide with any entity."""
+        player_transform = self.player.get_component("Transform")
+        radius = player_transform.radius
+
+        for entity in self.entities:
+            if entity.id == "Player":
+                continue
+            collider = entity.get_collider()
+            if collider:
+                transform = entity.get_component("Transform")
+                if collider.intersects(transform, next_x, next_y, radius):
+                    return True
+        return False
+
     def update(self, dt, keys):
         if self.state != self.STATE_PLAYING:
             return
@@ -409,18 +424,35 @@ class GameManager:
             right_x = math.cos(yaw_r)
             right_y = -math.sin(yaw_r)
 
+            # Calculate intended movement
+            dx, dy = 0, 0
             if keys.get(b"w"):
-                player_transform.x += fwd_x * MOVE_SPEED * dt
-                player_transform.y += fwd_y * MOVE_SPEED * dt
+                dx += fwd_x * MOVE_SPEED * dt
+                dy += fwd_y * MOVE_SPEED * dt
             if keys.get(b"s"):
-                player_transform.x -= fwd_x * MOVE_SPEED * dt
-                player_transform.y -= fwd_y * MOVE_SPEED * dt
+                dx -= fwd_x * MOVE_SPEED * dt
+                dy -= fwd_y * MOVE_SPEED * dt
             if keys.get(b"a"):
-                player_transform.x -= right_x * MOVE_SPEED * dt
-                player_transform.y -= right_y * MOVE_SPEED * dt
+                dx -= right_x * MOVE_SPEED * dt
+                dy -= right_y * MOVE_SPEED * dt
             if keys.get(b"d"):
-                player_transform.x += right_x * MOVE_SPEED * dt
-                player_transform.y += right_y * MOVE_SPEED * dt
+                dx += right_x * MOVE_SPEED * dt
+                dy += right_y * MOVE_SPEED * dt
+
+            # Collision Check & Movement with Sliding
+            next_x = player_transform.x + dx
+            next_y = player_transform.y + dy
+
+            if not self.check_collision(next_x, next_y):
+                player_transform.x = next_x
+                player_transform.y = next_y
+            else:
+                # Try sliding on X
+                if not self.check_collision(next_x, player_transform.y):
+                    player_transform.x = next_x
+                # Try sliding on Y
+                elif not self.check_collision(player_transform.x, next_y):
+                    player_transform.y = next_y
 
             if keys.get("left"):
                 player_transform.yaw -= ROTATE_SPEED * dt
