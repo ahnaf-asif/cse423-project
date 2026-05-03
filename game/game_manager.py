@@ -1,19 +1,91 @@
 import math
+import os
+import sys
 
 from components.student_anim_state import StudentAnimState
-from components.student_desk_state import StudentDeskState  # UPDATED IMPORT
+from components.student_desk_state import StudentDeskState
 from components.transform import Transform
 from core.entity import Entity
-from game.student_desk_renderer import StudentDeskRenderer  # UPDATED IMPORT
+from game.student_desk_renderer import StudentDeskRenderer
 from game.student_renderer import StudentRenderer
+from game.ui_renderer import UIRenderer
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 
 
 class GameManager:
+    # State Constants
+    STATE_MENU = 0
+    STATE_RULES = 1
+    STATE_PLAYING = 2
+    STATE_PAUSE = 3
+
     def __init__(self):
         self.entities = []
         self.frame_count = 0.0
+        self.state = self.STATE_MENU
+        self.previous_state = self.STATE_MENU
+        
+        # UI Renderer
+        self.ui_renderer = UIRenderer()
+        
+        # Rules content based on GDD
+        self.rules_pages = [
+            [
+                "PAGE 1: THE MISSION",
+                "",
+                "Welcome, Invigilator. Your duty is to oversee the final exam.",
+                "",
+                "• BALANCE YOUR WORK: You must complete tasks on your laptop.",
+                "• WATCH THE ROOM: When working, your view is blocked. This is when students strike.",
+                "• CATCH CHEATERS: Look for 'Anomalies'—anything that differs from the starting state of the room.",
+                "• GOAL: Successfully manage the room until the 60-minute timer reaches 0."
+            ],
+            [
+                "PAGE 2: THE ENVIRONMENT",
+                "",
+                "The classroom has a 4x4 grid of desks containing 12 students and 4 empty desks.",
+                "",
+                "STUDENT PROFILES:",
+                "• Identity: Each student has a unique Name and ID Card.",
+                "• Appearance: Pay attention to clothing colors.",
+                "• Equipment: Standard items include a Pen, Exam Sheet, and sometimes a Calculator.",
+                "• Memory is Key: Study the room at the start."
+            ],
+            [
+                "PAGE 3: SPOTTING ANOMALIES",
+                "",
+                "Cheating manifests as physical or supernatural anomalies. Watch for:",
+                "",
+                "• POSITIONS: Students swapping seats or moving to empty desks.",
+                "• ITEMS: Appearance of cheat sheets, missing pens, or swapped exam papers.",
+                "• BIZARRE EVENTS: Keep an eye out for supernatural shifts in the environment.",
+                "• LINGERERS: Disqualified students should be gone. Them reappearing is anamoly.",
+                "• Or anything else that wasn't there at the start.", 
+                "• NOTE: All ananomalies are considered 'Cheating' and must be disqualified."
+            ],
+            [
+                "PAGE 4: THE GAMEPLAY LOOP",
+                "",
+                "1. INSPECT: Study the students carefully before starting the exam.",
+                "2. WORK: Sit at the Teacher's Desk to begin. Your vision will be obscured.",
+                "3. INVESTIGATE: Step away from the laptop to scan for changes.",
+                "4. JUDGE: Disqualify those you suspect of cheating. If the room looks 'Clean,' take no action.",
+                "5. REPEAT: Return to work and progress the clock."
+            ],
+            [
+                "PAGE 5: DISCIPLINE & WIN CONDITIONS",
+                "",
+                "Your performance determines the timer:",
+                "",
+                "• SUCCESS: Identifying all cheaters correctly (and ignoring the innocent)",
+                " On success, the timer counts down by 10 minutes",
+                "• FAILURE: Falsely accusing a student or missing a cheater resets the clock to 60 minutes.",
+                "• TOTAL RESET: On failure, all disqualified students return. The exam starts over. (Total Restart)",
+                "• VICTORY: Reach 0 minutes to successfully complete your invigilation duty."
+            ]
+        ]
+        self.current_rules_page = 0
 
         # Room dimensions (Bounding Box) - ENLARGED
         self.room_width = 1000
@@ -58,8 +130,63 @@ class GameManager:
         teacher_desk.add_component("StudentDeskState", StudentDeskState())
         self.add_entity(teacher_desk)
 
+    def handle_mouse_click(self, button, state, x, y, width, height):
+        if button != GLUT_LEFT_BUTTON or state != GLUT_DOWN:
+            return
+
+        # UI Y is bottom-up, mouse Y is top-down
+        ui_y = height - y
+
+        if self.state == self.STATE_MENU:
+            # Start Game Button: Center
+            btn_w, btn_h = 200, 50
+            if (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 <= ui_y <= height/2 + btn_h):
+                self.previous_state = self.STATE_MENU
+                self.state = self.STATE_RULES
+                self.current_rules_page = 0
+            # Exit Button
+            elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 - 70 <= ui_y <= height/2 - 70 + btn_h):
+                os._exit(0)
+
+        elif self.state == self.STATE_PAUSE:
+            btn_w, btn_h = 200, 50
+            # Resume
+            if (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 + 60 <= ui_y <= height/2 + 60 + btn_h):
+                self.state = self.STATE_PLAYING
+            # Show Rules
+            elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 - 10 <= ui_y <= height/2 - 10 + btn_h):
+                self.previous_state = self.STATE_PAUSE
+                self.state = self.STATE_RULES
+                self.current_rules_page = 0
+            # Restart
+            elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 - 80 <= ui_y <= height/2 - 80 + btn_h):
+                self.state = self.STATE_MENU
+            # Quit
+            elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 - 150 <= ui_y <= height/2 - 150 + btn_h):
+                os._exit(0)
+
+        elif self.state == self.STATE_RULES:
+            margin = 50
+            btn_w, btn_h = 120, 40
+            
+            # Back Button
+            if (margin <= x <= margin + btn_w) and (margin <= ui_y <= margin + btn_h):
+                if self.current_rules_page > 0:
+                    self.current_rules_page -= 1
+                else:
+                    self.state = self.previous_state
+            
+            # Next Button
+            elif (width - margin - btn_w <= x <= width - margin) and (margin <= ui_y <= margin + btn_h):
+                if self.current_rules_page < len(self.rules_pages) - 1:
+                    self.current_rules_page += 1
+            
+            # Start/Resume Button (Always clickable)
+            elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (margin <= ui_y <= margin + btn_h):
+                self.state = self.STATE_PLAYING
+
     def toggle_state(self, state_name):
-        if not self.test_student:
+        if self.state != self.STATE_PLAYING or not self.test_student:
             return
         anim = self.test_student.get_component("AnimState")
         if not anim:
@@ -74,6 +201,9 @@ class GameManager:
             anim.is_sitting = False
 
     def update(self, dt, keys):
+        if self.state != self.STATE_PLAYING:
+            return
+
         self.frame_count += dt * 60.0
 
         if not self.test_student:
@@ -122,7 +252,19 @@ class GameManager:
             if transform.y < -half_d: transform.y = -half_d
             if transform.y > half_d: transform.y = half_d
 
-    def render(self):
+    def render(self, width, height):
+        if self.state == self.STATE_MENU:
+            self.ui_renderer.render_menu(width, height)
+        elif self.state == self.STATE_RULES:
+            label = "Resume" if self.previous_state == self.STATE_PAUSE else "Start"
+            self.ui_renderer.render_rules(width, height, self.rules_pages[self.current_rules_page], self.current_rules_page, len(self.rules_pages), label)
+        elif self.state == self.STATE_PAUSE:
+            self._render_3d_scene()
+            self.ui_renderer.render_pause_menu(width, height)
+        elif self.state == self.STATE_PLAYING:
+            self._render_3d_scene()
+
+    def _render_3d_scene(self):
         # Draw Floor
         glColor3f(0.3, 0.3, 0.3)
         glBegin(GL_QUADS)
@@ -153,7 +295,7 @@ class GameManager:
         glVertex3f(half_w, half_d, h); glVertex3f(half_w, -half_d, h)
         glEnd()
 
-        # Corner Shadows (Dark lines at the intersections)
+        # Corner Shadows
         glColor3f(0.1, 0.1, 0.1)
         glLineWidth(3.0)
         glBegin(GL_LINES)
@@ -163,8 +305,8 @@ class GameManager:
                 glVertex3f(x, y, h)
         glEnd()
 
-        # Draw Board (on Front Wall)
-        glColor3f(0.1, 0.15, 0.1)  # Darker green
+        # Draw Board
+        glColor3f(0.1, 0.15, 0.1)
         glBegin(GL_QUADS)
         glVertex3f(-250, half_d - 1, 50)
         glVertex3f(250, half_d - 1, 50)
@@ -172,7 +314,7 @@ class GameManager:
         glVertex3f(-250, half_d - 1, 150)
         glEnd()
 
-        # Draw Grid (Optional, keep it small)
+        # Draw Grid
         glColor3f(0.2, 0.2, 0.2)
         glBegin(GL_LINES)
         for i in range(int(-half_w), int(half_w) + 1, 50):
@@ -183,7 +325,7 @@ class GameManager:
             glVertex3f(half_w, i, 0.5)
         glEnd()
 
-        # --- ROUTE ENTITIES TO THEIR PROPER RENDERERS ---
+        # Route Entities
         for entity in self.entities:
             transform = entity.get_component("Transform")
             anim = entity.get_component("AnimState")
