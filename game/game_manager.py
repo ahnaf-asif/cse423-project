@@ -1,11 +1,12 @@
 import math
 import os
-import sys
 
+from components.laptop_state import LaptopState
 from components.student_anim_state import StudentAnimState
 from components.student_desk_state import StudentDeskState
 from components.transform import Transform
 from core.entity import Entity
+from game.laptop_renderer import LaptopRenderer
 from game.student_desk_renderer import StudentDeskRenderer
 from game.student_renderer import StudentRenderer
 from game.ui_renderer import UIRenderer
@@ -95,8 +96,14 @@ class GameManager:
         # Instantiate Renderers
         self.student_renderer = StudentRenderer()
         self.student_desk_renderer = StudentDeskRenderer()
+        self.laptop_renderer = LaptopRenderer()
 
-        # The "main" student we control
+        # Player (Invigilator)
+        self.player = Entity("Player")
+        self.player.add_component("Transform", Transform(0, -500, 100))
+        self.add_entity(self.player)
+
+        # The "main" student we control (Keeping for legacy/reference if needed)
         self.test_student = None
 
     def add_entity(self, entity):
@@ -128,6 +135,7 @@ class GameManager:
         teacher_desk = Entity("TeacherDesk")
         teacher_desk.add_component("Transform", Transform(0, 450, 0))
         teacher_desk.add_component("StudentDeskState", StudentDeskState())
+        teacher_desk.add_component("LaptopState", LaptopState())
         self.add_entity(teacher_desk)
 
     def handle_mouse_click(self, button, state, x, y, width, height):
@@ -171,8 +179,7 @@ class GameManager:
             
             # Back Button
             if (margin <= x <= margin + btn_w) and (margin <= ui_y <= margin + btn_h):
-                if self.current_rules_page > 0:
-                    self.current_rules_page -= 1
+                if self.current_rules_page > 0: self.current_rules_page -= 1
                 else:
                     self.state = self.previous_state
             
@@ -185,20 +192,30 @@ class GameManager:
             elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (margin <= ui_y <= margin + btn_h):
                 self.state = self.STATE_PLAYING
 
-    def toggle_state(self, state_name):
-        if self.state != self.STATE_PLAYING or not self.test_student:
+    def interact(self):
+        if self.state != self.STATE_PLAYING:
             return
-        anim = self.test_student.get_component("AnimState")
-        if not anim:
+        
+        # Check proximity to Teacher's Desk for laptop
+        player_transform = self.player.get_component("Transform")
+        for entity in self.entities:
+            laptop_state = entity.get_component("LaptopState")
+            if laptop_state:
+                desk_transform = entity.get_component("Transform")
+                dist = math.hypot(player_transform.x - desk_transform.x, player_transform.y - desk_transform.y)
+                if dist < 100.0: # INTERACT_RANGE
+                    laptop_state.start_work()
+                    return
+
+    def dismiss_laptop(self):
+        if self.state != self.STATE_PLAYING:
             return
-
-        current_val = getattr(anim, state_name)
-        setattr(anim, state_name, not current_val)
-
-        if state_name == "is_sitting" and anim.is_sitting:
-            anim.is_walking = False
-        if state_name == "is_walking" and anim.is_walking:
-            anim.is_sitting = False
+        
+        for entity in self.entities:
+            laptop_state = entity.get_component("LaptopState")
+            if laptop_state and laptop_state.is_being_used and laptop_state.is_work_done:
+                laptop_state.finish()
+                return
 
     def update(self, dt, keys):
         if self.state != self.STATE_PLAYING:
@@ -206,51 +223,61 @@ class GameManager:
 
         self.frame_count += dt * 60.0
 
-        if not self.test_student:
-            return
+        # Update all entities (like laptop timer)
+        for entity in self.entities:
+            laptop_state = entity.get_component("LaptopState")
+            if laptop_state:
+                laptop_state.update(dt)
 
-        transform = self.test_student.get_component("Transform")
-        anim = self.test_student.get_component("AnimState")
+        # Player Movement
+        player_transform = self.player.get_component("Transform")
+        
+        # Check if any laptop is being used - if so, freeze movement
+        is_using_laptop = any(e.get_component("LaptopState").is_being_used 
+                             for e in self.entities if e.get_component("LaptopState"))
 
-        if transform and anim:
-            if anim.is_sitting:
-                anim.is_walking = False
-            else:
-                dx, dy = 0.0, 0.0
-                if keys[b"w"]:
-                    dy += 1
-                if keys[b"s"]:
-                    dy -= 1
-                if keys[b"a"]:
-                    dx -= 1
-                if keys[b"d"]:
-                    dx += 1
+        if not is_using_laptop:
+            # First Person Movement
+            MOVE_SPEED = 200.0
+            ROTATE_SPEED = 120.0
+            
+            yaw_r = math.radians(player_transform.yaw)
+            fwd_x = math.sin(yaw_r)
+            fwd_y = math.cos(yaw_r)
+            right_x = math.cos(yaw_r)
+            right_y = -math.sin(yaw_r)
 
-                if dx != 0 or dy != 0:
-                    length = math.hypot(dx, dy)
-                    dx /= length
-                    dy /= length
+            if keys.get(b"w"):
+                player_transform.x += fwd_x * MOVE_SPEED * dt
+                player_transform.y += fwd_y * MOVE_SPEED * dt
+            if keys.get(b"s"):
+                player_transform.x -= fwd_x * MOVE_SPEED * dt
+                player_transform.y -= fwd_y * MOVE_SPEED * dt
+            if keys.get(b"a"):
+                player_transform.x -= right_x * MOVE_SPEED * dt
+                player_transform.y -= right_y * MOVE_SPEED * dt
+            if keys.get(b"d"):
+                player_transform.x += right_x * MOVE_SPEED * dt
+                player_transform.y += right_y * MOVE_SPEED * dt
 
-                    speed = 150.0
-                    transform.x += dx * speed * dt
-                    transform.y += dy * speed * dt
-
-                    target_yaw = math.degrees(math.atan2(dx, dy))
-                    transform.yaw = -target_yaw
-
-                    anim.is_walking = True
-                else:
-                    anim.is_walking = False
+            if keys.get("left"):
+                player_transform.yaw -= ROTATE_SPEED * dt
+            if keys.get("right"):
+                player_transform.yaw += ROTATE_SPEED * dt
+            if keys.get("up"):
+                player_transform.pitch = min(player_transform.pitch + ROTATE_SPEED * dt, 80.0)
+            if keys.get("down"):
+                player_transform.pitch = max(player_transform.pitch - ROTATE_SPEED * dt, -80.0)
 
             # --- Enforce Bounding Box (Room Boundaries) ---
-            margin = 20
+            margin = 30
             half_w = self.room_width / 2 - margin
             half_d = self.room_depth / 2 - margin
 
-            if transform.x < -half_w: transform.x = -half_w
-            if transform.x > half_w: transform.x = half_w
-            if transform.y < -half_d: transform.y = -half_d
-            if transform.y > half_d: transform.y = half_d
+            if player_transform.x < -half_w: player_transform.x = -half_w
+            if player_transform.x > half_w: player_transform.x = half_w
+            if player_transform.y < -half_d: player_transform.y = -half_d
+            if player_transform.y > half_d: player_transform.y = half_d
 
     def render(self, width, height):
         if self.state == self.STATE_MENU:
@@ -263,6 +290,59 @@ class GameManager:
             self.ui_renderer.render_pause_menu(width, height)
         elif self.state == self.STATE_PLAYING:
             self._render_3d_scene()
+            self._render_hud(width, height)
+
+    def _render_hud(self, width, height):
+        player_transform = self.player.get_component("Transform")
+        
+        # Check for interaction prompts
+        for entity in self.entities:
+            laptop_state = entity.get_component("LaptopState")
+            if laptop_state:
+                if laptop_state.is_being_used:
+                    # The laptop renderer handles its own full-screen HUD
+                    self.laptop_renderer.render(entity.get_component("Transform"), laptop_state)
+                else:
+                    desk_transform = entity.get_component("Transform")
+                    dist = math.hypot(player_transform.x - desk_transform.x, player_transform.y - desk_transform.y)
+                    if dist < 100.0:
+                        self._draw_prompt(width, height, "[E] Use Laptop")
+
+    def _draw_prompt(self, w, h, text):
+        # Set up 2D overlay
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        glOrtho(0, w, 0, h, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+        glDisable(GL_DEPTH_TEST)
+
+        # Draw a simple box and text for the prompt
+        glColor4f(0, 0, 0, 0.6)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        
+        bw, bh = 200, 40
+        bx, by = w/2 - bw/2, 50
+        glBegin(GL_QUADS)
+        glVertex2f(bx, by); glVertex2f(bx + bw, by)
+        glVertex2f(bx + bw, by + bh); glVertex2f(bx, by + bh)
+        glEnd()
+        glDisable(GL_BLEND)
+
+        glColor3f(1, 1, 1)
+        # Use simpler bitmap text for the prompt
+        glRasterPos2f(bx + 40, by + 15)
+        for char in text:
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(char))
+
+        glEnable(GL_DEPTH_TEST)
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+        glPopMatrix()
 
     def _render_3d_scene(self):
         # Draw Floor
@@ -327,11 +407,19 @@ class GameManager:
 
         # Route Entities
         for entity in self.entities:
+            if entity.id == "Player":
+                continue
+
             transform = entity.get_component("Transform")
             anim = entity.get_component("AnimState")
             student_desk = entity.get_component("StudentDeskState")
+            laptop = entity.get_component("LaptopState")
 
             if transform and anim:
                 self.student_renderer.render(transform, anim, self.frame_count)
             elif transform and student_desk:
                 self.student_desk_renderer.render(transform, student_desk)
+            
+            # Draw laptop on desk if present
+            if transform and laptop:
+                self.laptop_renderer.render(transform, laptop)
