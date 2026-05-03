@@ -4,11 +4,13 @@ import os
 from components.laptop_state import LaptopState
 from components.student_anim_state import StudentAnimState
 from components.student_desk_state import StudentDeskState
+from components.teacher_desk_state import TeacherDeskState
 from components.transform import Transform
 from core.entity import Entity
 from game.laptop_renderer import LaptopRenderer
 from game.student_desk_renderer import StudentDeskRenderer
 from game.student_renderer import StudentRenderer
+from game.teacher_desk_renderer import TeacherDeskRenderer
 from game.ui_renderer import UIRenderer
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -97,29 +99,23 @@ class GameManager:
         self.student_renderer = StudentRenderer()
         self.student_desk_renderer = StudentDeskRenderer()
         self.laptop_renderer = LaptopRenderer()
+        self.teacher_desk_renderer = TeacherDeskRenderer()
 
-        # Player (Invigilator)
+        # Player (Invigilator) - Start at front facing students
         self.player = Entity("Player")
-        self.player.add_component("Transform", Transform(0, -500, 100))
+        # Positioned in the gap between teacher and students
+        start_transform = Transform(0, 255, 100)
+        start_transform.yaw = 180
+        self.player.add_component("Transform", start_transform)
         self.add_entity(self.player)
-
-        # The "main" student we control (Keeping for legacy/reference if needed)
-        self.test_student = None
 
     def add_entity(self, entity):
         self.entities.append(entity)
-        if entity.id == "Student_Main":
-            self.test_student = entity
 
     def setup_classroom(self):
-        # --- 1. Create the Main Student ---
-        student = Entity("Student_Main")
-        student.add_component("Transform", Transform(0, -400, 40))
-        student.add_component("AnimState", StudentAnimState())
-        self.add_entity(student)
-
-        # --- 2. Create 4x4 Student Desks --- MORE SPACIOUS
-        start_x, start_y = -300, -200
+        # --- 1. Create 4x4 Student Desks ---
+        # Shifted back to maintain distance from teacher
+        start_x, start_y = -300, -430
         spacing_x, spacing_y = 200, 180
 
         for row in range(4):
@@ -131,11 +127,13 @@ class GameManager:
                 desk.add_component("StudentDeskState", StudentDeskState())
                 self.add_entity(desk)
 
-        # --- 3. Create Teacher's Desk ---
+        # --- 2. Create Teacher's Desk ---
         teacher_desk = Entity("TeacherDesk")
-        teacher_desk.add_component("Transform", Transform(0, 450, 0))
-        teacher_desk.add_component("StudentDeskState", StudentDeskState())
-        teacher_desk.add_component("LaptopState", LaptopState())
+        # Positioned at y=400 to allow space for a chair against the wall (y=600)
+        teacher_transform = Transform(0, 400, 0)
+        teacher_transform.yaw = 180
+        teacher_desk.add_component("Transform", teacher_transform)
+        teacher_desk.add_component("TeacherDeskState", TeacherDeskState())
         self.add_entity(teacher_desk)
 
     def handle_mouse_click(self, button, state, x, y, width, height):
@@ -199,12 +197,12 @@ class GameManager:
         # Check proximity to Teacher's Desk for laptop
         player_transform = self.player.get_component("Transform")
         for entity in self.entities:
-            laptop_state = entity.get_component("LaptopState")
-            if laptop_state:
+            teacher_desk_state = entity.get_component("TeacherDeskState")
+            if teacher_desk_state:
                 desk_transform = entity.get_component("Transform")
                 dist = math.hypot(player_transform.x - desk_transform.x, player_transform.y - desk_transform.y)
                 if dist < 100.0: # INTERACT_RANGE
-                    laptop_state.start_work()
+                    teacher_desk_state.laptop.start_work()
                     return
 
     def dismiss_laptop(self):
@@ -212,10 +210,12 @@ class GameManager:
             return
         
         for entity in self.entities:
-            laptop_state = entity.get_component("LaptopState")
-            if laptop_state and laptop_state.is_being_used and laptop_state.is_work_done:
-                laptop_state.finish()
-                return
+            teacher_desk_state = entity.get_component("TeacherDeskState")
+            if teacher_desk_state:
+                laptop = teacher_desk_state.laptop
+                if laptop.is_being_used and laptop.is_work_done:
+                    laptop.finish()
+                    return
 
     def update(self, dt, keys):
         if self.state != self.STATE_PLAYING:
@@ -223,18 +223,22 @@ class GameManager:
 
         self.frame_count += dt * 60.0
 
-        # Update all entities (like laptop timer)
+        # Update all entities (like timer and laptop in teacher desk)
         for entity in self.entities:
-            laptop_state = entity.get_component("LaptopState")
-            if laptop_state:
-                laptop_state.update(dt)
+            teacher_desk_state = entity.get_component("TeacherDeskState")
+            if teacher_desk_state:
+                teacher_desk_state.update(dt)
 
         # Player Movement
         player_transform = self.player.get_component("Transform")
         
-        # Check if any laptop is being used - if so, freeze movement
-        is_using_laptop = any(e.get_component("LaptopState").is_being_used 
-                             for e in self.entities if e.get_component("LaptopState"))
+        # Check if laptop is being used - if so, freeze movement
+        is_using_laptop = False
+        for entity in self.entities:
+            teacher_desk_state = entity.get_component("TeacherDeskState")
+            if teacher_desk_state and teacher_desk_state.laptop.is_being_used:
+                is_using_laptop = True
+                break
 
         if not is_using_laptop:
             # First Person Movement
@@ -295,14 +299,17 @@ class GameManager:
     def _render_hud(self, width, height):
         player_transform = self.player.get_component("Transform")
         
-        # Check for interaction prompts
+        # Check for interaction prompts and laptop takeover
         for entity in self.entities:
-            laptop_state = entity.get_component("LaptopState")
-            if laptop_state:
-                if laptop_state.is_being_used:
-                    # The laptop renderer handles its own full-screen HUD
-                    self.laptop_renderer.render(entity.get_component("Transform"), laptop_state)
+            teacher_desk_state = entity.get_component("TeacherDeskState")
+            if teacher_desk_state:
+                laptop = teacher_desk_state.laptop
+                if laptop.is_being_used:
+                    # Render the full-screen laptop HUD
+                    # The laptop renderer handles its own 2D projection
+                    self.laptop_renderer.render(entity.get_component("Transform"), laptop)
                 else:
+                    # Check for "Use Laptop" prompt
                     desk_transform = entity.get_component("Transform")
                     dist = math.hypot(player_transform.x - desk_transform.x, player_transform.y - desk_transform.y)
                     if dist < 100.0:
@@ -344,7 +351,7 @@ class GameManager:
         glMatrixMode(GL_MODELVIEW)
         glPopMatrix()
 
-    def _render_3d_scene(self):
+    def _render_room(self):
         # Draw Floor
         glColor3f(0.3, 0.3, 0.3)
         glBegin(GL_QUADS)
@@ -352,6 +359,15 @@ class GameManager:
         glVertex3f(self.room_width/2, self.room_depth/2, 0)
         glVertex3f(self.room_width/2, -self.room_depth/2, 0)
         glVertex3f(-self.room_width/2, -self.room_depth/2, 0)
+        glEnd()
+
+        # Draw Roof
+        glColor3f(0.4, 0.4, 0.4)
+        glBegin(GL_QUADS)
+        glVertex3f(-self.room_width/2, self.room_depth/2, self.wall_height)
+        glVertex3f(self.room_width/2, self.room_depth/2, self.wall_height)
+        glVertex3f(self.room_width/2, -self.room_depth/2, self.wall_height)
+        glVertex3f(-self.room_width/2, -self.room_depth/2, self.wall_height)
         glEnd()
 
         # Draw Walls
@@ -405,6 +421,9 @@ class GameManager:
             glVertex3f(half_w, i, 0.5)
         glEnd()
 
+    def _render_3d_scene(self):
+        self._render_room()
+
         # Route Entities
         for entity in self.entities:
             if entity.id == "Player":
@@ -413,13 +432,11 @@ class GameManager:
             transform = entity.get_component("Transform")
             anim = entity.get_component("AnimState")
             student_desk = entity.get_component("StudentDeskState")
-            laptop = entity.get_component("LaptopState")
+            teacher_desk = entity.get_component("TeacherDeskState")
 
             if transform and anim:
                 self.student_renderer.render(transform, anim, self.frame_count)
             elif transform and student_desk:
                 self.student_desk_renderer.render(transform, student_desk)
-            
-            # Draw laptop on desk if present
-            if transform and laptop:
-                self.laptop_renderer.render(transform, laptop)
+            elif transform and teacher_desk:
+                self.teacher_desk_renderer.render(transform, teacher_desk)
