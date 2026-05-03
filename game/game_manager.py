@@ -11,6 +11,7 @@ from components.transform import Transform
 from core.entity import Entity
 from game.anomaly_manager import AnomalyManager
 from game.baseline_manager import BaselineManager
+from game.inspection_renderer import InspectionRenderer
 from game.laptop_renderer import LaptopRenderer
 from game.student_desk_renderer import StudentDeskRenderer
 from game.student_renderer import StudentRenderer
@@ -27,6 +28,7 @@ class GameManager:
     STATE_PLAYING = 2
     STATE_PAUSE = 3
     STATE_VICTORY = 4
+    STATE_INSPECTING = 5
 
     def __init__(self):
         self.entities = []
@@ -38,9 +40,14 @@ class GameManager:
         self.ui_renderer = UIRenderer()
         self.baseline_manager = BaselineManager()
         self.anomaly_manager = AnomalyManager()
+        self.inspection_renderer = InspectionRenderer()
         
         self.target_student = None # The student the player is currently looking at
         self.target_desk_entity = None # Keep track of the desk for interaction
+        
+        # Inspection state
+        self.inspection_selected_index = 0
+        self.is_viewing_item = False
         
         self.objective_text = "OBJECTIVE: Start the exam at your desk."
         self.is_exam_started = False
@@ -182,8 +189,10 @@ class GameManager:
                 
                 # Randomize desk items for students
                 desk_state.exam_sheet.is_visible = True
+                desk_state.exam_sheet.extra_logs = [f"Name: {name}", f"ID: {id_num}"]
                 desk_state.calculator.is_visible = random.choice([True, False])
                 desk_state.smartphone.is_visible = False # Anomaly only
+                desk_state.cheatsheet.is_visible = False # Anomaly only
                 
                 student_count += 1
             else:
@@ -191,6 +200,7 @@ class GameManager:
                 desk_state.exam_sheet.is_visible = False
                 desk_state.calculator.is_visible = False
                 desk_state.smartphone.is_visible = False
+                desk_state.cheatsheet.is_visible = False
 
             self.add_entity(desk)
 
@@ -268,6 +278,35 @@ class GameManager:
                 self.is_exam_started = False
                 self._reset_classroom()
 
+    def handle_key(self, key):
+        if self.state == self.STATE_INSPECTING:
+            if key == b"\r":  # Enter
+                self.is_viewing_item = True
+            elif key in [b"\x08", b"\x1b", b" "]:  # Backspace/Esc/Space
+                if self.is_viewing_item:
+                    self.is_viewing_item = False
+                else:
+                    self.state = self.STATE_PLAYING
+            elif key == b"q": # Toggle off
+                self.state = self.STATE_PLAYING
+
+    def handle_special_key(self, key):
+        if self.state == self.STATE_INSPECTING and not self.is_viewing_item:
+            menu_size = len(self.inspection_renderer.available_items)
+            if menu_size > 0:
+                if key == GLUT_KEY_UP:
+                    self.inspection_selected_index = (self.inspection_selected_index - 1) % menu_size
+                elif key == GLUT_KEY_DOWN:
+                    self.inspection_selected_index = (self.inspection_selected_index + 1) % menu_size
+
+    def is_laptop_active(self):
+        """Returns True if the player is currently using the laptop."""
+        for entity in self.entities:
+            tds = entity.get_component("TeacherDeskState")
+            if tds and tds.laptop.is_being_used:
+                return True
+        return False
+
     def interact(self):
         if self.state != self.STATE_PLAYING:
             return
@@ -295,10 +334,12 @@ class GameManager:
                     return
 
     def inspect_student(self):
-        if not self.target_desk_entity:
+        if not self.target_desk_entity or not self.target_student:
             return
-        print(f"[GameManager] Inspecting {self.target_student.name}")
-        # TODO: Implement inspection logic
+        print(f"[GameManager] Opening inspection menu for {self.target_student.name}")
+        self.state = self.STATE_INSPECTING
+        self.inspection_selected_index = 0
+        self.is_viewing_item = False
 
     def disqualify_student(self):
         if not self.target_desk_entity or not self.target_student:
@@ -444,6 +485,17 @@ class GameManager:
             self._render_hud(width, height)
         elif self.state == self.STATE_VICTORY:
             self.ui_renderer.render_victory(width, height)
+        elif self.state == self.STATE_INSPECTING:
+            desk_state = self.target_desk_entity.get_component("StudentDeskState")
+            if self.is_viewing_item:
+                self.inspection_renderer.render_item_inspection(
+                    width, height, self.inspection_selected_index, desk_state
+                )
+            else:
+                self._render_3d_scene()
+                self.inspection_renderer.render_menu(
+                    width, height, self.inspection_selected_index, desk_state
+                )
 
     def _render_hud(self, width, height):
         # 0. Render Objective
@@ -454,7 +506,10 @@ class GameManager:
         # 1. Render Student Info & Prompts if looking at one nearby
         if self.target_student:
             self._draw_name_tag(width, height, self.target_student)
-            self._draw_prompt(width, height, "[Q] Inspect  [F] Disqualify", y_offset=180)
+            prompt = "[Q] Inspect"
+            if self.is_exam_started:
+                prompt += "  [F] Disqualify"
+            self._draw_prompt(width, height, prompt, y_offset=180)
 
         # 2. Check for interaction prompts and laptop takeover
         for entity in self.entities:

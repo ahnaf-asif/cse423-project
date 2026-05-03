@@ -74,7 +74,7 @@ class InspectionRenderer:
             
             self._draw_text(width * 0.4, height/2 + menu_h/2 - 40 - i * 40, prefix + display_name, GLUT_BITMAP_HELVETICA_18)
 
-        self._draw_text(width * 0.38, height/2 - menu_h/2 + 15, "[UP/DOWN] Nav  [ENTER] Inspect  [Q] Exit", GLUT_BITMAP_HELVETICA_12)
+        self._draw_text(width * 0.38, height/2 - menu_h/2 + 15, "[UP/DOWN] Nav  [ENTER] Inspect  [ESC] Exit", GLUT_BITMAP_HELVETICA_12)
         self._pop_2d()
 
     def render_item_inspection(self, width, height, item_index, desk_state):
@@ -84,10 +84,13 @@ class InspectionRenderer:
 
         display_name, internal_id = self.available_items[item_index]
         
+        # Clear again because we are doing a full-screen takeover with a different FOV
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(60, width / height, 0.1, 1000)
+        
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
