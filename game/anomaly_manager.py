@@ -1,9 +1,12 @@
 import random
-from anomalies.seat_swap import SeatSwapAnomaly
+
+from anomalies.alien_transform import AlienTransformAnomaly
+from anomalies.calculator_swap import CalculatorSwapAnomaly
+from anomalies.dancing import DancingAnomaly
 from anomalies.forged_id import ForgedIDAnomaly
 from anomalies.pen_swap import PenSwapAnomaly
-from anomalies.alien_transform import AlienTransformAnomaly
-from anomalies.dancing import DancingAnomaly
+from anomalies.seat_swap import SeatSwapAnomaly
+
 
 class AnomalyManager:
     def __init__(self):
@@ -19,16 +22,17 @@ class AnomalyManager:
             "ForgedID": 12.14,
             "PenSwap": 12.14,
             "CalcSwap": 12.14,
-            "Smartphone": 12.14
+            "Smartphone": 12.14,
         }
-        
+
         # Instance registry for anomaly logic
         self.anomaly_instances = {
             "SeatSwap": SeatSwapAnomaly(),
             "ForgedID": ForgedIDAnomaly(),
             "PenSwap": PenSwapAnomaly(),
-            "AlienTransform": AlienTransformAnomaly(),
-            "Dancing": DancingAnomaly()
+            "Alien": AlienTransformAnomaly(),
+            "Dancing": DancingAnomaly(),
+            "CalcSwap": CalculatorSwapAnomaly(),
         }
 
     def pick_anomaly(self):
@@ -44,14 +48,14 @@ class AnomalyManager:
 
         old_weight = self.weights[successful_anomaly]
         self.weights[successful_anomaly] = 2.0
-        
+
         # Calculate how much weight we need to redistribute
         diff = old_weight - 2.0
-        
+
         # Redistribute linearly among other 9 anomalies
         other_anomalies = [k for k in self.weights.keys() if k != successful_anomaly]
         total_other_weight = sum(self.weights[k] for k in other_anomalies)
-        
+
         for k in other_anomalies:
             # Add a portion of the diff based on current relative weight
             proportion = self.weights[k] / total_other_weight
@@ -64,15 +68,6 @@ class AnomalyManager:
         if anomaly_name in self.anomaly_instances:
             instance = self.anomaly_instances[anomaly_name]
             return instance.apply(entities)
-        
+
         print(f"[AnomalyManager] Warning: {anomaly_name} logic not implemented yet.")
         return []
-
-    # --- Applicator Placeholders ---
-    def _apply_seat_swap(self, entities):
-        # Logic to pick 2 eligible desks and swap AnimState
-        pass
-
-    def _apply_calc_swap(self, entities):
-        # Logic to toggle calculator visibility
-        pass
