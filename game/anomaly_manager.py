@@ -4,6 +4,7 @@ from anomalies.forged_id import ForgedIDAnomaly
 from anomalies.pen_swap import PenSwapAnomaly
 from anomalies.alien_transform import AlienTransformAnomaly
 from anomalies.dancing import DancingAnomaly
+from anomalies.cheat_sheet import CheatSheetAnomaly
 
 class AnomalyManager:
     def __init__(self):
@@ -28,7 +29,8 @@ class AnomalyManager:
             "ForgedID": ForgedIDAnomaly(),
             "PenSwap": PenSwapAnomaly(),
             "AlienTransform": AlienTransformAnomaly(),
-            "Dancing": DancingAnomaly()
+            "Dancing": DancingAnomaly(),
+            "CheatSheet": CheatSheetAnomaly()
         }
 
     def pick_anomaly(self):
