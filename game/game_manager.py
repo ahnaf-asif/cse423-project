@@ -9,6 +9,8 @@ from components.student_desk_state import StudentDeskState
 from components.teacher_desk_state import TeacherDeskState
 from components.transform import Transform
 from core.entity import Entity
+from game.anomaly_manager import AnomalyManager
+from game.baseline_manager import BaselineManager
 from game.laptop_renderer import LaptopRenderer
 from game.student_desk_renderer import StudentDeskRenderer
 from game.student_renderer import StudentRenderer
@@ -24,6 +26,7 @@ class GameManager:
     STATE_RULES = 1
     STATE_PLAYING = 2
     STATE_PAUSE = 3
+    STATE_VICTORY = 4
 
     def __init__(self):
         self.entities = []
@@ -33,7 +36,19 @@ class GameManager:
         
         # UI & Gameplay Managers
         self.ui_renderer = UIRenderer()
+        self.baseline_manager = BaselineManager()
+        self.anomaly_manager = AnomalyManager()
+        
         self.target_student = None # The student the player is currently looking at
+        self.target_desk_entity = None # Keep track of the desk for interaction
+        
+        self.objective_text = "OBJECTIVE: Start the exam at your desk."
+        self.is_exam_started = False
+        self.rounds_completed = 0 # Track actual gameplay rounds
+        self.is_round_active = False # Tracks if an anomaly roll has occurred this session
+        
+        self.disqualified_students = [] # List of (desk_id, anim_state) tuples
+        self.exam_time_left = 60 # Minutes
         
         # Rules content based on GDD
         self.rules_pages = [
@@ -243,6 +258,16 @@ class GameManager:
             elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (margin <= ui_y <= margin + btn_h):
                 self.state = self.STATE_PLAYING
 
+        elif self.state == self.STATE_VICTORY:
+            btn_w, btn_h = 200, 50
+            if (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 - 140 <= ui_y <= height/2 - 140 + btn_h):
+                self.state = self.STATE_MENU
+                # Reset for next game
+                self.exam_time_left = 60
+                self.rounds_completed = 0
+                self.is_exam_started = False
+                self._reset_classroom()
+
     def interact(self):
         if self.state != self.STATE_PLAYING:
             return
@@ -254,7 +279,18 @@ class GameManager:
             if teacher_desk_state:
                 desk_transform = entity.get_component("Transform")
                 dist = math.hypot(player_transform.x - desk_transform.x, player_transform.y - desk_transform.y)
-                if dist < 100.0: # INTERACT_RANGE
+                if dist < 160.0: # INTERACT_RANGE
+                    if not self.is_exam_started:
+                        # First time using laptop -> Start Exam
+                        self.baseline_manager.capture_classroom(self.entities)
+                        self.is_exam_started = True
+                        self.objective_text = "OBJECTIVE: Monitor the students. Catch any cheaters."
+                        
+                        # Everyone starts writing
+                        for e in self.entities:
+                            anim = e.get_component("AnimState")
+                            if anim: anim.is_writing = True
+                    
                     teacher_desk_state.laptop.start_work()
                     return
 
@@ -265,10 +301,17 @@ class GameManager:
         # TODO: Implement inspection logic
 
     def disqualify_student(self):
-        if not self.target_desk_entity:
+        if not self.target_desk_entity or not self.target_student:
             return
-        print(f"[GameManager] Disqualifying {self.target_student.name}")
-        # TODO: Implement disqualification logic
+        
+        print(f"[GameManager] Disqualifying {self.target_student.name} from {self.target_desk_entity.id}")
+        
+        # Store for history/restoration and remove from room
+        self.disqualified_students.append((self.target_desk_entity.id, self.target_student))
+        del self.target_desk_entity.components["AnimState"]
+        
+        self.target_student = None
+        self.target_desk_entity = None
 
     def dismiss_laptop(self):
         if self.state != self.STATE_PLAYING:
@@ -279,7 +322,15 @@ class GameManager:
             if teacher_desk_state:
                 laptop = teacher_desk_state.laptop
                 if laptop.is_being_used and laptop.is_work_done:
+                    # EVALUATION PHASE (Before dismissing)
+                    if self.is_exam_started:
+                        self._evaluate_round()
+
+                    # Roll for NEXT round anomaly
+                    self._trigger_round_roll()
+                    
                     laptop.finish()
+                    self.is_round_active = False # Reset for next session
                     return
 
     def update(self, dt, keys):
@@ -391,8 +442,13 @@ class GameManager:
         elif self.state == self.STATE_PLAYING:
             self._render_3d_scene()
             self._render_hud(width, height)
+        elif self.state == self.STATE_VICTORY:
+            self.ui_renderer.render_victory(width, height)
 
     def _render_hud(self, width, height):
+        # 0. Render Objective
+        self._draw_objective(width, height)
+
         player_transform = self.player.get_component("Transform")
         
         # 1. Render Student Info & Prompts if looking at one nearby
@@ -407,14 +463,45 @@ class GameManager:
                 laptop = teacher_desk_state.laptop
                 if laptop.is_being_used:
                     # Render the full-screen laptop HUD
-                    # The laptop renderer handles its own 2D projection
-                    self.laptop_renderer.render(entity.get_component("Transform"), laptop)
+                    self.laptop_renderer.render(entity.get_component("Transform"), laptop, width, height)
                 else:
                     # Check for "Use Laptop" prompt
                     desk_transform = entity.get_component("Transform")
                     dist = math.hypot(player_transform.x - desk_transform.x, player_transform.y - desk_transform.y)
-                    if dist < 100.0:
+                    if dist < 160.0:
                         self._draw_prompt(width, height, "[E] Use Laptop")
+
+    def _draw_objective(self, w, h):
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        glOrtho(0, w, 0, h, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+        glDisable(GL_DEPTH_TEST)
+
+        # Subtle dark background for readability
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glColor4f(0, 0, 0, 0.4)
+        glBegin(GL_QUADS)
+        glVertex2f(20, h - 60); glVertex2f(500, h - 60)
+        glVertex2f(500, h - 20); glVertex2f(20, h - 20)
+        glEnd()
+        glDisable(GL_BLEND)
+
+        # Draw objective text
+        glColor3f(1, 1, 0) # Yellow for emphasis
+        glRasterPos2f(30, h - 45)
+        for char in self.objective_text:
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(char))
+
+        glEnable(GL_DEPTH_TEST)
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+        glPopMatrix()
 
     def _draw_name_tag(self, w, h, student):
         glMatrixMode(GL_PROJECTION)
@@ -584,3 +671,113 @@ class GameManager:
             
             if transform and teacher_desk:
                 self.teacher_desk_renderer.render(transform, teacher_desk)
+
+    def _trigger_round_roll(self):
+        self.is_round_active = True
+        print("\n" + "="*40)
+        print("   NEW ROUND: ANOMALY ROLL")
+        print("="*40)
+        
+        if random.random() < 0.5:
+            # Anomaly Occurs
+            # choice = self.anomaly_manager.pick_anomaly() # TEMPORARILY FORCING SEAT SWAP
+            choice = "SeatSwap"
+            print(f"\n[Game] ROLL: ANOMALY SELECTED -> {choice} (FORCED FOR TESTING)")
+            affected = self.anomaly_manager.apply_anomaly(choice, self.entities)
+            if not affected:
+                print("[Game] Roll failed (No eligible students). Room stays NORMAL.")
+            else:
+                print(f"[Game] Applied {choice} to: {[e.id for e in affected]}")
+        else:
+            print("\n[Game] ROLL: NO ANOMALY. Room stays NORMAL.")
+
+        self._log_room_state("BASELINE (NORMAL)", is_baseline=True)
+        self._log_room_state("CURRENT STATE")
+        print("\n" + "="*40 + "\n")
+
+    def _log_room_state(self, header, is_baseline=False):
+        print(f"\n--- {header} ---")
+        # Log in a grid format for better readability
+        for row in range(4):
+            line = []
+            for col in range(4):
+                desk_id = f"StudentDesk_{row}_{col}"
+                if is_baseline:
+                    snap = self.baseline_manager.snapshot.get(desk_id)
+                    student = snap["anim_state"] if snap else None
+                else:
+                    # Find entity by id
+                    desk_entity = next((e for e in self.entities if e.id == desk_id), None)
+                    student = desk_entity.get_component("AnimState") if desk_entity else None
+                
+                name = student.name[:5] if student else "EMPTY"
+                line.append(f"{desk_id[-3:]}: {name:5}")
+            print(" | ".join(line))
+
+    def _evaluate_round(self):
+        """Checks if the player correctly identified all anomalies."""
+        # The very first interaction just "Starts" the exam, no evaluation yet
+        if self.rounds_completed == 0:
+            print("[Game] Exam Initialized. No evaluation for Round 0.")
+            self.rounds_completed += 1
+            return
+
+        print("\n--- EVALUATING ROUND ---")
+        
+        is_failure = False
+        
+        # 1. Check for missed anomalies (False Negatives)
+        # An anomaly is only "missed" if there's still a student in the room who shouldn't be there or is wrong.
+        for entity in self.entities:
+            if "StudentDesk" in entity.id:
+                anim = entity.get_component("AnimState")
+                if anim: # ONLY check desks that still have students
+                    if self.baseline_manager.is_desk_anomalous(entity):
+                        print(f"[Evaluation] MISSED ANOMALY: Student {anim.name} at {entity.id} is anomalous!")
+                        is_failure = True
+                        break
+
+        # 2. Check for innocent students disqualified (False Positives)
+        if not is_failure:
+            for desk_id, student in self.disqualified_students:
+                # Reconstruct a temp entity to check against baseline
+                temp_entity = Entity(desk_id)
+                temp_entity.add_component("AnimState", student)
+                # Find the actual desk to get its baseline items (calculator, sheet)
+                actual_desk = next(e for e in self.entities if e.id == desk_id)
+                temp_entity.add_component("StudentDeskState", actual_desk.get_component("StudentDeskState"))
+                
+                if not self.baseline_manager.is_desk_anomalous(temp_entity):
+                    print(f"[Evaluation] FALSE ACCUSATION! {student.name} was innocent at {desk_id}.")
+                    is_failure = True
+                    break
+
+        if is_failure:
+            print("[Evaluation] PHASE FAILED. Resetting to 60 minutes.")
+            self.exam_time_left = 60
+            self._reset_classroom()
+            self.rounds_completed = 1 # Keep it at 1 so next round evaluated
+        else:
+            print("[Evaluation] PHASE SUCCESS! -10 Minutes.")
+            self.exam_time_left = max(0, self.exam_time_left - 10)
+            self.rounds_completed += 1
+            if self.exam_time_left == 0:
+                print("!!! VICTORY !!!")
+                self.state = self.STATE_VICTORY
+        
+        # Update physical clock (TimerState uses total_seconds)
+        for entity in self.entities:
+            tds = entity.get_component("TeacherDeskState")
+            if tds:
+                tds.timer.total_seconds = float(self.exam_time_left * 60)
+
+    def _reset_classroom(self):
+        """Restores the room to baseline and returns disqualified students."""
+        print("[Game] Resetting classroom to baseline...")
+        self.baseline_manager.restore_classroom(self.entities)
+        self.disqualified_students = []
+        
+        # Ensure they are all writing again
+        for e in self.entities:
+            anim = e.get_component("AnimState")
+            if anim: anim.is_writing = True

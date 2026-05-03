@@ -1,4 +1,5 @@
 import random
+from anomalies.seat_swap import SeatSwapAnomaly
 
 class AnomalyManager:
     def __init__(self):
@@ -15,6 +16,11 @@ class AnomalyManager:
             "PenSwap": 12.14,
             "CalcSwap": 12.14,
             "Smartphone": 12.14
+        }
+        
+        # Instance registry for anomaly logic
+        self.anomaly_instances = {
+            "SeatSwap": SeatSwapAnomaly()
         }
 
     def pick_anomaly(self):
@@ -46,16 +52,12 @@ class AnomalyManager:
     def apply_anomaly(self, anomaly_name, entities):
         """
         Main entry point for triggering an anomaly.
-        This will eventually call specific 'Applicator' functions.
-        Returns the desk(s) affected so GameManager can track them if needed.
         """
-        print(f"[AnomalyManager] Triggering: {anomaly_name}")
+        if anomaly_name in self.anomaly_instances:
+            instance = self.anomaly_instances[anomaly_name]
+            return instance.apply(entities)
         
-        # TODO: Implement specific eligibility checks and application logic
-        # Example:
-        # if anomaly_name == "SeatSwap":
-        #    return self._apply_seat_swap(entities)
-        
+        print(f"[AnomalyManager] Warning: {anomaly_name} logic not implemented yet.")
         return []
 
     # --- Applicator Placeholders ---

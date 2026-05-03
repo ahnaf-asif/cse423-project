@@ -1,6 +1,6 @@
 from core.component import Component
 
-WORK_DURATION = 5.0
+WORK_DURATION = 2.0
 
 TYPING_TEXT = (
     "Exam Supervision Log\n"
