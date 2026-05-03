@@ -6,11 +6,11 @@ from anomalies.alien_transform import AlienTransformAnomaly
 from anomalies.dancing import DancingAnomaly
 from anomalies.cheat_sheet import CheatSheetAnomaly
 from anomalies.exam_swap import ExamSwapAnomaly
+from anomalies.ghost_reappear import GhostReappearAnomaly
 
 class AnomalyManager:
     def __init__(self):
         # Initial probabilities as defined in GDD
-        # Total base = (3 * 5) + (7 * 12.14) = 15 + 84.98 = 99.98%
         self.weights = {
             "Alien": 5.0,
             "Dancing": 5.0,
@@ -32,7 +32,8 @@ class AnomalyManager:
             "AlienTransform": AlienTransformAnomaly(),
             "Dancing": DancingAnomaly(),
             "CheatSheet": CheatSheetAnomaly(),
-            "ExamSwap": ExamSwapAnomaly()
+            "ExamSwap": ExamSwapAnomaly(),
+            "Ghost": GhostReappearAnomaly()
         }
 
     def pick_anomaly(self):
@@ -61,22 +62,18 @@ class AnomalyManager:
             proportion = self.weights[k] / total_other_weight
             self.weights[k] += diff * proportion
 
-    def apply_anomaly(self, anomaly_name, entities):
+    def apply_anomaly(self, anomaly_name, entities, game_manager):
         """
         Main entry point for triggering an anomaly.
         """
         if anomaly_name in self.anomaly_instances:
             instance = self.anomaly_instances[anomaly_name]
+            
+            # Special case for Ghost which needs game_manager context
+            if anomaly_name == "Ghost":
+                return instance.apply(entities, game_manager)
+                
             return instance.apply(entities)
         
         print(f"[AnomalyManager] Warning: {anomaly_name} logic not implemented yet.")
         return []
-
-    # --- Applicator Placeholders ---
-    def _apply_seat_swap(self, entities):
-        # Logic to pick 2 eligible desks and swap AnimState
-        pass
-
-    def _apply_calc_swap(self, entities):
-        # Logic to toggle calculator visibility
-        pass
