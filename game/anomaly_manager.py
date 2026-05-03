@@ -1,5 +1,6 @@
 import random
 from anomalies.seat_swap import SeatSwapAnomaly
+from anomalies.forged_id import ForgedIDAnomaly
 
 class AnomalyManager:
     def __init__(self):
@@ -20,7 +21,8 @@ class AnomalyManager:
         
         # Instance registry for anomaly logic
         self.anomaly_instances = {
-            "SeatSwap": SeatSwapAnomaly()
+            "SeatSwap": SeatSwapAnomaly(),
+            "ForgedID": ForgedIDAnomaly()
         }
 
     def pick_anomaly(self):
