@@ -2,7 +2,12 @@ from core.component import Component
 
 
 class StudentAnimState(Component):
-    def __init__(self):
+    def __init__(self, name="Student", id_number="000-000", cloth_color=(0.5, 0.5, 0.5)):
+        # Identity
+        self.name = name
+        self.id_number = id_number
+        self.cloth_color = cloth_color
+
         self.is_idle = True
         self.is_walking = False
         self.is_sitting = False

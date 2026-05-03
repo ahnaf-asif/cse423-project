@@ -108,26 +108,64 @@ class GameManager:
         start_transform.yaw = 180
         self.player.add_component("Transform", start_transform)
         self.add_entity(self.player)
-
-    def add_entity(self, entity):
-        self.entities.append(entity)
-
+import math
+import os
+import random
+import sys
+...
     def setup_classroom(self):
-        # --- 1. Create 4x4 Student Desks ---
-        # Shifted back to maintain distance from teacher
+        # 1. Define Identity Pools
+        names = [
+            "Abul", "Kuddus", "Kashem", "Mokless", "Boltu", "Poltu",
+            "Hablu", "Gablu", "Jobbar", "Motin", "Solim", "Kolim",
+            "Sokina", "Jorina", " Morjina", "Kulsum"
+        ]
+        random.shuffle(names)
+
+        colors = [
+            (0.8, 0.2, 0.2), (0.2, 0.8, 0.2), (0.2, 0.2, 0.8), # R, G, B
+            (0.8, 0.8, 0.2), (0.8, 0.2, 0.8), (0.2, 0.8, 0.8), # Y, M, C
+            (0.5, 0.5, 0.5), (0.9, 0.5, 0.1), (0.5, 0.1, 0.9), # Grey, Orange, Purple
+            (0.1, 0.9, 0.5), (0.4, 0.2, 0.1), (0.1, 0.4, 0.2)  # Teal, Brown, Forest
+        ]
+        random.shuffle(colors)
+
+        # 2. Determine which desks are occupied (12 out of 16)
+        desk_indices = list(range(16))
+        occupied_indices = random.sample(desk_indices, 12)
+
+        # 3. Create 4x4 Student Desks
         start_x, start_y = -300, -430
         spacing_x, spacing_y = 200, 180
 
-        for row in range(4):
-            for col in range(4):
-                desk = Entity(f"StudentDesk_{row}_{col}")
-                x = start_x + col * spacing_x
-                y = start_y + row * spacing_y
-                desk.add_component("Transform", Transform(x, y, 0))
-                desk.add_component("StudentDeskState", StudentDeskState())
-                self.add_entity(desk)
+        student_count = 0
+        for i in range(16):
+            row = i // 4
+            col = i % 4
 
-        # --- 2. Create Teacher's Desk ---
+            desk_id = f"StudentDesk_{row}_{col}"
+            desk = Entity(desk_id)
+            x = start_x + col * spacing_x
+            y = start_y + row * spacing_y
+            desk.add_component("Transform", Transform(x, y, 0))
+            desk.add_component("StudentDeskState", StudentDeskState())
+
+            if i in occupied_indices:
+                name = names[student_count]
+                id_num = f"22-4{random.randint(100, 999)}-3"
+                color = colors[student_count % len(colors)]
+
+                # Add Student to the desk
+                student_state = StudentAnimState(name, id_num, color)
+                student_state.is_sitting = True
+                student_state.is_writing = True # Default behavior
+                desk.add_component("AnimState", student_state)
+                student_count += 1
+
+            self.add_entity(desk)
+
+        # --- 4. Create Teacher's Desk ---
+
         teacher_desk = Entity("TeacherDesk")
         # Positioned at y=400 to allow space for a chair against the wall (y=600)
         teacher_transform = Transform(0, 400, 0)
