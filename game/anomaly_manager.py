@@ -9,6 +9,7 @@ from anomalies.seat_swap import SeatSwapAnomaly
 from anomalies.cheat_sheet import CheatSheetAnomaly
 from anomalies.exam_swap import ExamSwapAnomaly
 from anomalies.ghost_reappear import GhostReappearAnomaly
+from anomalies.smartphone import SmartphoneAnomaly
 
 class AnomalyManager:
     def __init__(self):
@@ -36,7 +37,8 @@ class AnomalyManager:
             "Dancing": DancingAnomaly(),
             "CheatSheet": CheatSheetAnomaly(),
             "ExamSwap": ExamSwapAnomaly(),
-            "Ghost": GhostReappearAnomaly()
+            "Ghost": GhostReappearAnomaly(),
+            "Smartphone": SmartphoneAnomaly()
         }
 
     def pick_anomaly(self):
