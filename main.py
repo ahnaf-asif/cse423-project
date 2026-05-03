@@ -61,6 +61,7 @@ def mouseListener(button, state, x, y):
 
 
 def specialKeyListener(key, x, y):
+    game.handle_special_key(key)
     if key == GLUT_KEY_LEFT:
         key_states["left"] = True
     elif key == GLUT_KEY_RIGHT:
@@ -83,14 +84,26 @@ def specialKeyUpListener(key, x, y):
 
 
 def keyboardListener(key, x, y):
+    # 1. Isolate Inspection Input
+    if game.state == game.STATE_INSPECTING:
+        game.handle_key(key)
+        return
+    
+    # 2. Isolate Laptop Takeover (Only while playing)
+    if game.state == game.STATE_PLAYING and game.is_laptop_active():
+        if key == b" ":
+            game.dismiss_laptop()
+        # All other keys (including ESC) do nothing
+        return
+
+    # 3. Track key states for movement
     if key in key_states:
         key_states[key] = True
-        # If it's a movement key, we can return. But for E/Space, we need to continue.
         if key not in [b"e", b" ", b"q", b"f"]:
             return
 
-    # Esc key for Pausing
-    if key == b"\x1b":
+    # 3. Handle System Keys
+    if key == b"\x1b": # ESC
         if game.state == game.STATE_PLAYING:
             game.state = game.STATE_PAUSE
         elif game.state == game.STATE_PAUSE:
@@ -99,7 +112,7 @@ def keyboardListener(key, x, y):
             game.state = game.previous_state
         return
 
-    # Actions
+    # 4. Handle Gameplay Actions
     if key == b"e":
         game.interact()
     elif key == b"q":
@@ -118,9 +131,8 @@ def keyboardUpListener(key, x, y):
 def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
-    if game.state == game.STATE_PLAYING:
-        # Check if laptop is being used to skip 3D setup if needed
-        # (Though LaptopRenderer does its own projection setup)
+    # Setup 3D camera for all states that render the classroom background
+    if game.state in [game.STATE_PLAYING, game.STATE_PAUSE, game.STATE_INSPECTING]:
         setupCamera()
     
     game.render(window_width, window_height)

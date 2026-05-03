@@ -55,11 +55,13 @@ class BaselineManager:
             if snap["anim_state"].name != current_anim.name: return True
             if snap["anim_state"].id_number != current_anim.id_number: return True
             if snap["anim_state"].cloth_color != current_anim.cloth_color: return True
+            if snap["anim_state"].pen_color != current_anim.pen_color: return True
             
         # 3. Desk Items check
         current_desk = entity.get_component("StudentDeskState")
         snap_desk = snap["desk_state"]
         if snap_desk.calculator.is_visible != current_desk.calculator.is_visible: return True
-        # (Add more checks for exam sheets, smartphones, etc. here)
+        if snap_desk.smartphone.is_visible != current_desk.smartphone.is_visible: return True
+        if snap_desk.cheatsheet.is_visible != current_desk.cheatsheet.is_visible: return True
         
         return False
