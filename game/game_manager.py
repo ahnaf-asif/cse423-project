@@ -736,8 +736,7 @@ class GameManager:
         if random.random() < 0.5:
             # Anomaly Occurs
             # choice = self.anomaly_manager.pick_anomaly() # TEMPORARILY FORCING ANOMALIES
-            # choice = random.choice(["SeatSwap", "ForgedID", "PenSwap", "AlienTransform"])
-            choice = "AlienTransform" # FORCED FOR TESTING
+            choice = "Dancing" # FORCED FOR TESTING
             print(f"\n[Game] ROLL: ANOMALY SELECTED -> {choice} (FORCED FOR TESTING)")
             affected = self.anomaly_manager.apply_anomaly(choice, self.entities)
             if not affected:

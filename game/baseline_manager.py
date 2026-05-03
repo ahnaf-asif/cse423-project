@@ -58,6 +58,7 @@ class BaselineManager:
             if snap["anim_state"].pen_color != current_anim.pen_color: return True
             if snap["anim_state"].is_alien != current_anim.is_alien: return True
             if snap["anim_state"].is_ghost != current_anim.is_ghost: return True
+            if snap["anim_state"].is_dancing != current_anim.is_dancing: return True
             
         # 3. Desk Items check
         current_desk = entity.get_component("StudentDeskState")
