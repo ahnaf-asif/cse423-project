@@ -112,11 +112,11 @@ class LaptopRenderer:
     # ------------------------------------------------------------------
     # Interaction HUD
     # ------------------------------------------------------------------
-    def _render_work_hud(self, state):
+    def _render_work_hud(self, state, w, h):
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
         glLoadIdentity()
-        glOrtho(0, 800, 0, 600, -1, 1)
+        glOrtho(0, w, 0, h, -1, 1)
 
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
@@ -126,40 +126,47 @@ class LaptopRenderer:
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        # Full black background
+        # Full black background - Scales to window
         glColor4f(0.0, 0.0, 0.0, 1.0)
         glBegin(GL_QUADS)
         glVertex2f(0, 0)
-        glVertex2f(800, 0)
-        glVertex2f(800, 600)
-        glVertex2f(0, 600)
+        glVertex2f(w, 0)
+        glVertex2f(w, h)
+        glVertex2f(0, h)
         glEnd()
+
+        # Center the laptop bezel
+        bw, bh = 640, 480 # Bezel width/height
+        bx = (w - bw) / 2
+        by = (h - bh) / 2
 
         # Outer bezel
         glColor3f(0.10, 0.10, 0.10)
         glBegin(GL_QUADS)
-        glVertex2f(80, 60)
-        glVertex2f(720, 60)
-        glVertex2f(720, 540)
-        glVertex2f(80, 540)
+        glVertex2f(bx, by)
+        glVertex2f(bx + bw, by)
+        glVertex2f(bx + bw, by + bh)
+        glVertex2f(bx, by + bh)
         glEnd()
 
         # Screen border
+        margin = 10
         glColor3f(0.20, 0.20, 0.22)
         glBegin(GL_QUADS)
-        glVertex2f(90, 70)
-        glVertex2f(710, 70)
-        glVertex2f(710, 530)
-        glVertex2f(90, 530)
+        glVertex2f(bx + margin, by + margin)
+        glVertex2f(bx + bw - margin, by + margin)
+        glVertex2f(bx + bw - margin, by + bh - margin)
+        glVertex2f(bx + margin, by + bh - margin)
         glEnd()
 
         # Screen face (near-black)
+        margin = 20
         glColor3f(0.03, 0.03, 0.05)
         glBegin(GL_QUADS)
-        glVertex2f(100, 80)
-        glVertex2f(700, 80)
-        glVertex2f(700, 520)
-        glVertex2f(100, 520)
+        glVertex2f(bx + margin, by + margin)
+        glVertex2f(bx + bw - margin, by + margin)
+        glVertex2f(bx + bw - margin, by + bh - margin)
+        glVertex2f(bx + margin, by + bh - margin)
         glEnd()
 
         glDisable(GL_BLEND)
@@ -167,8 +174,8 @@ class LaptopRenderer:
         # ── Typing text ──
         TEXT_SCALE = 0.11
         LINE_HEIGHT = 17
-        MARGIN_X = 112
-        START_Y = 505
+        MARGIN_X = bx + 32
+        START_Y = by + bh - 55
 
         visible = TYPING_TEXT[: state.typed_chars]
         lines = visible.split("\n")
@@ -177,13 +184,13 @@ class LaptopRenderer:
         glLineWidth(1.2)
 
         for i, line in enumerate(lines):
-            y = START_Y - i * LINE_HEIGHT
-            if y < 88:
+            ty = START_Y - i * LINE_HEIGHT
+            if ty < by + margin + 10:
                 break
             if not line:
                 continue
             glPushMatrix()
-            glTranslatef(float(MARGIN_X), float(y), 0.0)
+            glTranslatef(float(MARGIN_X), float(ty), 0.0)
             glScalef(TEXT_SCALE, TEXT_SCALE, 1.0)
             for ch in line:
                 if ch.isprintable():
@@ -199,7 +206,7 @@ class LaptopRenderer:
             row = len(lines) - 1
             cx = MARGIN_X + int(len(last) * 104.76 * TEXT_SCALE)
             cy = START_Y - row * LINE_HEIGHT
-            if 88 <= cy <= 520:
+            if by + margin <= cy <= by + bh - margin:
                 glPushMatrix()
                 glTranslatef(float(cx), float(cy), 0.0)
                 glScalef(TEXT_SCALE, TEXT_SCALE, 1.0)
@@ -210,7 +217,7 @@ class LaptopRenderer:
         if state.is_work_done:
             glColor3f(0.18, 0.93, 0.38)
             glPushMatrix()
-            glTranslatef(float(MARGIN_X), 84.0, 0.0)
+            glTranslatef(float(MARGIN_X), by + margin + 10, 0.0)
             glScalef(TEXT_SCALE, TEXT_SCALE, 1.0)
             for ch in "Work saved.  Press [SPACE] to return.":
                 glutStrokeCharacter(GLUT_STROKE_ROMAN, ord(ch))
@@ -222,10 +229,10 @@ class LaptopRenderer:
         glMatrixMode(GL_MODELVIEW)
         glPopMatrix()
 
-    def render(self, desk_transform, state):
+    def render(self, desk_transform, state, w=800, h=600):
         if not state.is_visible:
             return
         if state.is_being_used:
-            self._render_work_hud(state)
+            self._render_work_hud(state, w, h)
         else:
             self._render_on_desk(desk_transform)

@@ -85,7 +85,9 @@ def specialKeyUpListener(key, x, y):
 def keyboardListener(key, x, y):
     if key in key_states:
         key_states[key] = True
-        return
+        # If it's a movement key, we can return. But for E/Space, we need to continue.
+        if key not in [b"e", b" ", b"q", b"f"]:
+            return
 
     # Esc key for Pausing
     if key == b"\x1b":
