@@ -7,3 +7,4 @@ class Transform(Component):
         self.y = y
         self.z = z
         self.yaw = 0
+        self.pitch = 0

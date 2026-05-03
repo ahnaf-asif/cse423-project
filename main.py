@@ -15,25 +15,38 @@ last_time = 0
 window_width = 1000
 window_height = 800
 
-# Orbital Camera
-cam_radius = 800.0
-cam_angle_h = math.pi / 2 + 0.5
-cam_angle_v = 0.6
-
-# Track movement keys
-key_states = {b"w": False, b"a": False, b"s": False, b"d": False}
+# Track keys
+key_states = {
+    b"w": False, b"a": False, b"s": False, b"d": False,
+    "left": False, "right": False, "up": False, "down": False,
+    b"e": False, b" ": False
+}
 
 
 def setupCamera():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(60, window_width / window_height, 1.0, 5000)
+    gluPerspective(70, window_width / window_height, 0.5, 5000)
+    
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-    cam_x = cam_radius * math.cos(cam_angle_v) * math.cos(cam_angle_h)
-    cam_y = cam_radius * math.cos(cam_angle_v) * math.sin(cam_angle_h)
-    cam_z = cam_radius * math.sin(cam_angle_v)
-    gluLookAt(cam_x, cam_y, cam_z, 0, 50, 40, 0, 0, 1)
+
+    # Get player transform
+    player_transform = game.player.get_component("Transform")
+    
+    yaw_r = math.radians(player_transform.yaw)
+    pitch_r = math.radians(player_transform.pitch)
+
+    # Direction the camera is looking (First Person)
+    look_x = math.sin(yaw_r) * math.cos(pitch_r)
+    look_y = math.cos(yaw_r) * math.cos(pitch_r)
+    look_z = math.sin(pitch_r)
+
+    gluLookAt(
+        player_transform.x, player_transform.y, player_transform.z,
+        player_transform.x + look_x, player_transform.y + look_y, player_transform.z + look_z,
+        0, 0, 1
+    )
 
 
 def reshape(w, h):
@@ -48,15 +61,25 @@ def mouseListener(button, state, x, y):
 
 
 def specialKeyListener(key, x, y):
-    global cam_angle_h, cam_angle_v
     if key == GLUT_KEY_LEFT:
-        cam_angle_h -= 0.1
+        key_states["left"] = True
     elif key == GLUT_KEY_RIGHT:
-        cam_angle_h += 0.1
+        key_states["right"] = True
     elif key == GLUT_KEY_UP:
-        cam_angle_v = min(cam_angle_v + 0.1, 1.5)
+        key_states["up"] = True
     elif key == GLUT_KEY_DOWN:
-        cam_angle_v = max(cam_angle_v - 0.1, 0.1)
+        key_states["down"] = True
+
+
+def specialKeyUpListener(key, x, y):
+    if key == GLUT_KEY_LEFT:
+        key_states["left"] = False
+    elif key == GLUT_KEY_RIGHT:
+        key_states["right"] = False
+    elif key == GLUT_KEY_UP:
+        key_states["up"] = False
+    elif key == GLUT_KEY_DOWN:
+        key_states["down"] = False
 
 
 def keyboardListener(key, x, y):
@@ -74,8 +97,11 @@ def keyboardListener(key, x, y):
             game.state = game.previous_state
         return
 
-    if key == b"2":
-        game.toggle_state("is_sitting")
+    # Actions
+    if key == b"e":
+        game.interact()
+    elif key == b" ":
+        game.dismiss_laptop()
 
 
 def keyboardUpListener(key, x, y):
@@ -87,6 +113,8 @@ def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
     if game.state == game.STATE_PLAYING:
+        # Check if laptop is being used to skip 3D setup if needed
+        # (Though LaptopRenderer does its own projection setup)
         setupCamera()
     
     game.render(window_width, window_height)
@@ -119,12 +147,15 @@ def main():
     glutKeyboardFunc(keyboardListener)
     glutKeyboardUpFunc(keyboardUpListener)
     glutSpecialFunc(specialKeyListener)
+    glutSpecialUpFunc(specialKeyUpListener)
     glutIdleFunc(idle)
 
     print("--- Controls ---")
-    print("WASD       : Move Student (in-game)")
-    print("Arrow Keys : Orbit Camera (in-game)")
-    print("Mouse      : Navigate Menus")
+    print("WASD       : Move Invigilator")
+    print("Arrow Keys : Look around")
+    print("E          : Interact (Laptop/Students)")
+    print("SPACE      : Dismiss laptop screen")
+    print("ESC        : Pause")
 
     glutMainLoop()
 
