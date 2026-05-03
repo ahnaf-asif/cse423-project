@@ -98,28 +98,21 @@ class GameManager:
         self.student_desk_renderer = StudentDeskRenderer()
         self.laptop_renderer = LaptopRenderer()
 
-        # Player (Invigilator)
+        # Player (Invigilator) - Start at front facing students
         self.player = Entity("Player")
-        self.player.add_component("Transform", Transform(0, -500, 100))
+        # Positioned in front of teacher's desk (y=450), facing students
+        start_transform = Transform(0, 320, 100)
+        start_transform.yaw = 180
+        self.player.add_component("Transform", start_transform)
         self.add_entity(self.player)
-
-        # The "main" student we control (Keeping for legacy/reference if needed)
-        self.test_student = None
 
     def add_entity(self, entity):
         self.entities.append(entity)
-        if entity.id == "Student_Main":
-            self.test_student = entity
 
     def setup_classroom(self):
-        # --- 1. Create the Main Student ---
-        student = Entity("Student_Main")
-        student.add_component("Transform", Transform(0, -400, 40))
-        student.add_component("AnimState", StudentAnimState())
-        self.add_entity(student)
-
-        # --- 2. Create 4x4 Student Desks --- MORE SPACIOUS
-        start_x, start_y = -300, -200
+        # --- 1. Create 4x4 Student Desks ---
+        # Shifted back so front row is at y=190
+        start_x, start_y = -300, -350
         spacing_x, spacing_y = 200, 180
 
         for row in range(4):
@@ -131,9 +124,9 @@ class GameManager:
                 desk.add_component("StudentDeskState", StudentDeskState())
                 self.add_entity(desk)
 
-        # --- 3. Create Teacher's Desk ---
+        # --- 2. Create Teacher's Desk ---
         teacher_desk = Entity("TeacherDesk")
-        teacher_desk.add_component("Transform", Transform(0, 450, 0))
+        teacher_desk.add_component("Transform", Transform(0, 480, 0))
         teacher_desk.add_component("StudentDeskState", StudentDeskState())
         teacher_desk.add_component("LaptopState", LaptopState())
         self.add_entity(teacher_desk)
@@ -352,6 +345,15 @@ class GameManager:
         glVertex3f(self.room_width/2, self.room_depth/2, 0)
         glVertex3f(self.room_width/2, -self.room_depth/2, 0)
         glVertex3f(-self.room_width/2, -self.room_depth/2, 0)
+        glEnd()
+
+        # Draw Roof
+        glColor3f(0.4, 0.4, 0.4)
+        glBegin(GL_QUADS)
+        glVertex3f(-self.room_width/2, self.room_depth/2, self.wall_height)
+        glVertex3f(self.room_width/2, self.room_depth/2, self.wall_height)
+        glVertex3f(self.room_width/2, -self.room_depth/2, self.wall_height)
+        glVertex3f(-self.room_width/2, -self.room_depth/2, self.wall_height)
         glEnd()
 
         # Draw Walls
