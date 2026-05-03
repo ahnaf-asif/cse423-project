@@ -1,3 +1,4 @@
+from components.chair_state import ChairState
 from components.laptop_state import LaptopState
 from components.timer_state import TimerState
 from core.component import Component
@@ -8,6 +9,7 @@ class TeacherDeskState(Component):
         # Initialize the nested states for the teacher's items
         self.laptop = LaptopState()
         self.timer = TimerState()
+        self.chair = ChairState()
 
     def update(self, dt):
         # Pass the delta time down to the timer so its internal clock keeps running

@@ -1,5 +1,7 @@
 import math
 import os
+import random
+import sys
 
 from components.laptop_state import LaptopState
 from components.student_anim_state import StudentAnimState
@@ -29,8 +31,9 @@ class GameManager:
         self.state = self.STATE_MENU
         self.previous_state = self.STATE_MENU
         
-        # UI Renderer
+        # UI & Gameplay Managers
         self.ui_renderer = UIRenderer()
+        self.target_student = None # The student the player is currently looking at
         
         # Rules content based on GDD
         self.rules_pages = [
@@ -108,11 +111,10 @@ class GameManager:
         start_transform.yaw = 180
         self.player.add_component("Transform", start_transform)
         self.add_entity(self.player)
-import math
-import os
-import random
-import sys
-...
+
+    def add_entity(self, entity):
+        self.entities.append(entity)
+
     def setup_classroom(self):
         # 1. Define Identity Pools
         names = [
@@ -148,7 +150,9 @@ import sys
             x = start_x + col * spacing_x
             y = start_y + row * spacing_y
             desk.add_component("Transform", Transform(x, y, 0))
-            desk.add_component("StudentDeskState", StudentDeskState())
+            
+            desk_state = StudentDeskState()
+            desk.add_component("StudentDeskState", desk_state)
 
             if i in occupied_indices:
                 name = names[student_count]
@@ -158,9 +162,20 @@ import sys
                 # Add Student to the desk
                 student_state = StudentAnimState(name, id_num, color)
                 student_state.is_sitting = True
-                student_state.is_writing = True # Default behavior
+                student_state.is_writing = False # Not writing yet
                 desk.add_component("AnimState", student_state)
+                
+                # Randomize desk items for students
+                desk_state.exam_sheet.is_visible = True
+                desk_state.calculator.is_visible = random.choice([True, False])
+                desk_state.smartphone.is_visible = False # Anomaly only
+                
                 student_count += 1
+            else:
+                # Clear items from empty desks
+                desk_state.exam_sheet.is_visible = False
+                desk_state.calculator.is_visible = False
+                desk_state.smartphone.is_visible = False
 
             self.add_entity(desk)
 
@@ -243,6 +258,18 @@ import sys
                     teacher_desk_state.laptop.start_work()
                     return
 
+    def inspect_student(self):
+        if not self.target_desk_entity:
+            return
+        print(f"[GameManager] Inspecting {self.target_student.name}")
+        # TODO: Implement inspection logic
+
+    def disqualify_student(self):
+        if not self.target_desk_entity:
+            return
+        print(f"[GameManager] Disqualifying {self.target_student.name}")
+        # TODO: Implement disqualification logic
+
     def dismiss_laptop(self):
         if self.state != self.STATE_PLAYING:
             return
@@ -284,6 +311,7 @@ import sys
             ROTATE_SPEED = 120.0
             
             yaw_r = math.radians(player_transform.yaw)
+            pitch_r = math.radians(player_transform.pitch)
             fwd_x = math.sin(yaw_r)
             fwd_y = math.cos(yaw_r)
             right_x = math.cos(yaw_r)
@@ -311,6 +339,36 @@ import sys
             if keys.get("down"):
                 player_transform.pitch = max(player_transform.pitch - ROTATE_SPEED * dt, -80.0)
 
+            # --- Student Targeting Logic ---
+            self.target_student = None
+            self.target_desk_entity = None # Keep track of the desk for interaction
+            best_dot = 0.95 # Slightly wider tolerance
+            INTERACT_RANGE = 120.0
+            
+            # Look vector
+            lx = math.sin(yaw_r) * math.cos(pitch_r)
+            ly = math.cos(yaw_r) * math.cos(pitch_r)
+            lz = math.sin(pitch_r)
+
+            for entity in self.entities:
+                anim = entity.get_component("AnimState")
+                if anim:
+                    et = entity.get_component("Transform")
+                    # Check distance first
+                    dist_to_desk = math.hypot(player_transform.x - et.x, player_transform.y - et.y)
+                    if dist_to_desk < INTERACT_RANGE:
+                        # Target the student's head
+                        ex, ey, ez = et.x, et.y - 25, 80 
+                        vx, vy, vz = ex - player_transform.x, ey - player_transform.y, ez - player_transform.z
+                        dist_to_head = math.sqrt(vx*vx + vy*vy + vz*vz)
+                        if dist_to_head > 0:
+                            vx /= dist_to_head; vy /= dist_to_head; vz /= dist_to_head
+                            dot = lx*vx + ly*vy + lz*vz
+                            if dot > best_dot:
+                                best_dot = dot
+                                self.target_student = anim
+                                self.target_desk_entity = entity
+
             # --- Enforce Bounding Box (Room Boundaries) ---
             margin = 30
             half_w = self.room_width / 2 - margin
@@ -337,7 +395,12 @@ import sys
     def _render_hud(self, width, height):
         player_transform = self.player.get_component("Transform")
         
-        # Check for interaction prompts and laptop takeover
+        # 1. Render Student Info & Prompts if looking at one nearby
+        if self.target_student:
+            self._draw_name_tag(width, height, self.target_student)
+            self._draw_prompt(width, height, "[Q] Inspect  [F] Disqualify", y_offset=180)
+
+        # 2. Check for interaction prompts and laptop takeover
         for entity in self.entities:
             teacher_desk_state = entity.get_component("TeacherDeskState")
             if teacher_desk_state:
@@ -353,7 +416,48 @@ import sys
                     if dist < 100.0:
                         self._draw_prompt(width, height, "[E] Use Laptop")
 
-    def _draw_prompt(self, w, h, text):
+    def _draw_name_tag(self, w, h, student):
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+        glOrtho(0, w, 0, h, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+        glDisable(GL_DEPTH_TEST)
+
+        # Draw plate
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glColor4f(0, 0, 0, 0.7)
+        pw, ph = 300, 60
+        px, py = w/2 - pw/2, h - 100
+        glBegin(GL_QUADS)
+        glVertex2f(px, py); glVertex2f(px + pw, py)
+        glVertex2f(px + pw, py + ph); glVertex2f(px, py + ph)
+        glEnd()
+        glDisable(GL_BLEND)
+
+        # Draw Name and ID
+        glColor3f(1, 1, 1)
+        name_text = f"NAME: {student.name}"
+        id_text = f"ID: {student.id_number}"
+        
+        glRasterPos2f(px + 20, py + 35)
+        for char in name_text:
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(char))
+            
+        glRasterPos2f(px + 20, py + 12)
+        for char in id_text:
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ord(char))
+
+        glEnable(GL_DEPTH_TEST)
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+        glPopMatrix()
+
+    def _draw_prompt(self, w, h, text, y_offset=50):
         # Set up 2D overlay
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
@@ -369,8 +473,8 @@ import sys
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         
-        bw, bh = 200, 40
-        bx, by = w/2 - bw/2, 50
+        bw, bh = 250 if "Q" in text else 200, 40
+        bx, by = w/2 - bw/2, y_offset
         glBegin(GL_QUADS)
         glVertex2f(bx, by); glVertex2f(bx + bw, by)
         glVertex2f(bx + bw, by + bh); glVertex2f(bx, by + bh)
@@ -379,7 +483,7 @@ import sys
 
         glColor3f(1, 1, 1)
         # Use simpler bitmap text for the prompt
-        glRasterPos2f(bx + 40, by + 15)
+        glRasterPos2f(bx + 20, by + 15)
         for char in text:
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(char))
 
@@ -472,9 +576,11 @@ import sys
             student_desk = entity.get_component("StudentDeskState")
             teacher_desk = entity.get_component("TeacherDeskState")
 
+            if transform and student_desk:
+                self.student_desk_renderer.render(transform, student_desk)
+            
             if transform and anim:
                 self.student_renderer.render(transform, anim, self.frame_count)
-            elif transform and student_desk:
-                self.student_desk_renderer.render(transform, student_desk)
-            elif transform and teacher_desk:
+            
+            if transform and teacher_desk:
                 self.teacher_desk_renderer.render(transform, teacher_desk)

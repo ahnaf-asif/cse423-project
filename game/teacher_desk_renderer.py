@@ -1,3 +1,4 @@
+from game.chair_renderer import ChairRenderer
 from game.laptop_renderer import LaptopRenderer
 from game.timer_renderer import TimerRenderer
 from OpenGL.GL import *
@@ -9,6 +10,7 @@ class TeacherDeskRenderer:
     def __init__(self):
         self.laptop_renderer = LaptopRenderer()
         self.timer_renderer = TimerRenderer()
+        self.chair_renderer = ChairRenderer()
 
     def _draw_desk_geometry(self):
         # Table Top (Darker mahogany-style wood)
@@ -35,6 +37,13 @@ class TeacherDeskRenderer:
         glTranslatef(desk_transform.x, desk_transform.y, desk_transform.z)
         glRotatef(desk_transform.yaw, 0, 0, 1)
         self._draw_desk_geometry()
+        
+        # Render the chair behind the teacher desk
+        glPushMatrix()
+        glTranslatef(0, -30, 0)
+        self.chair_renderer._draw_chair()
+        glPopMatrix()
+        
         glPopMatrix()
 
         # 2. Render the items on top
