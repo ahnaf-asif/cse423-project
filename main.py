@@ -7,12 +7,13 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 game = GameManager()
+game.setup_classroom()
 last_time = 0
 
 # Orbital Camera
-cam_radius = 250.0
-cam_angle_h = math.pi / 4
-cam_angle_v = 0.5
+cam_radius = 800.0  # Increased for larger room
+cam_angle_h = math.pi / 2 + 0.5
+cam_angle_v = 0.6
 
 # NEW: Track which movement keys are currently being held down
 key_states = {b"w": False, b"a": False, b"s": False, b"d": False}
@@ -21,13 +22,15 @@ key_states = {b"w": False, b"a": False, b"s": False, b"d": False}
 def setupCamera():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(60, 1000 / 800, 0.1, 1500)
+    # Near plane increased to 1.0 for better Z-buffer precision, far plane to 5000
+    gluPerspective(60, 1000 / 800, 1.0, 5000)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     cam_x = cam_radius * math.cos(cam_angle_v) * math.cos(cam_angle_h)
     cam_y = cam_radius * math.cos(cam_angle_v) * math.sin(cam_angle_h)
     cam_z = cam_radius * math.sin(cam_angle_v)
-    gluLookAt(cam_x, cam_y, cam_z, 0, 0, 40, 0, 0, 1)
+    # Focus slightly in front of center
+    gluLookAt(cam_x, cam_y, cam_z, 0, 50, 40, 0, 0, 1)
 
 
 def specialKeyListener(key, x, y):

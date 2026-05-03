@@ -44,11 +44,7 @@ class StudentDeskRenderer:
                 glPopMatrix()
         glPopMatrix()
 
-        # state.smartphone.is_being_inspected = True
-        state.calculator.is_visible = True
-        state.smartphone.is_visible = False
-        state.calculator.is_being_inspected = True
-
+        # Render attachments (they handle their own desk_transform)
         self.exam_sheet_renderer.render(transform, state.exam_sheet)
         self.calculator_renderer.render(transform, state.calculator)
         self.smartphone_renderer.render(transform, state.smartphone)
