@@ -105,7 +105,7 @@ class LaptopRenderer:
         glPushMatrix()
         glTranslatef(desk_transform.x, desk_transform.y, desk_transform.z)
         glRotatef(desk_transform.yaw, 0, 0, 1)
-        glTranslatef(0.0, 5.0, 41.0)
+        glTranslatef(-10.0, -10.0, 41.0)
         self._draw_laptop_model()
         glPopMatrix()
 
