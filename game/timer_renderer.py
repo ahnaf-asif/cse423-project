@@ -174,7 +174,7 @@ class TimerRenderer:
         # Shifted left (X=14 instead of 22)
         # Shifted slightly down the desk toward the player (Y=-15 instead of -10)
         # Calculated exact Z placement to sit perfectly flush with the desk (Z=41.8)
-        glTranslatef(14, -15, 49)
+        glTranslatef(14, -10, 42)
         glRotatef(90, 1, 0, 0)  # lay flat → stand upright, face toward -Y
 
         # Scaled down a little bit more
