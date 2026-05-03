@@ -100,6 +100,10 @@ def keyboardListener(key, x, y):
     # Actions
     if key == b"e":
         game.interact()
+    elif key == b"q":
+        game.inspect_student()
+    elif key == b"f":
+        game.disqualify_student()
     elif key == b" ":
         game.dismiss_laptop()
 

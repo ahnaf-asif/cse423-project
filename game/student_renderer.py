@@ -45,7 +45,10 @@ class StudentRenderer:
         glRotatef(transform.yaw, 0, 0, 1)
 
         if anim.is_sitting:
-            glTranslatef(0, 0, 10)  # Hips at z=45 (fits perfectly under z=40 desk)
+            # Shift to chair position (local to desk)
+            # Y = -25 matches the chair placement in StudentDeskRenderer
+            # Z = 50 puts the torso bottom roughly on the cushion top (Z=30.25)
+            glTranslatef(0, -25, 50)
         elif anim.is_walking:
             glTranslatef(0, 0, 15 + abs(math.sin(frame_count * 0.15)) * 3)
         else:

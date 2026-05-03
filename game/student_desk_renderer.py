@@ -3,6 +3,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 from .calculator_renderer import CalculatorRenderer
+from .chair_renderer import ChairRenderer
 from .exam_sheet_renderer import ExamSheetRenderer
 from .smartphone_renderer import SmartphoneRenderer
 
@@ -13,6 +14,7 @@ class StudentDeskRenderer:
         self.exam_sheet_renderer = ExamSheetRenderer()
         self.calculator_renderer = CalculatorRenderer()
         self.smartphone_renderer = SmartphoneRenderer()
+        self.chair_renderer = ChairRenderer()
 
     def draw_cube(self, w, h, d):
         """Helper to draw scaled cubes (Rectangular Prisms)"""
@@ -42,6 +44,15 @@ class StudentDeskRenderer:
                 glTranslatef(dx, dy, 19.5)
                 self.draw_cube(4, 4, 39)
                 glPopMatrix()
+
+        # --- 2. RENDER THE CHAIR RELATIVE TO DESK ---
+        # The chair is placed behind the desk (Y = -25)
+        # and faces the desk (Yaw = 0).
+        glPushMatrix()
+        glTranslatef(0, -25, 0)
+        self.chair_renderer._draw_chair()
+        glPopMatrix()
+
         glPopMatrix()
 
         self.exam_sheet_renderer.render(transform, state.exam_sheet)
