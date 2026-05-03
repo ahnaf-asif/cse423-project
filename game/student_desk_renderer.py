@@ -4,6 +4,7 @@ from OpenGL.GLUT import *
 
 from .calculator_renderer import CalculatorRenderer
 from .chair_renderer import ChairRenderer
+from .cheatsheet_renderer import CheatsheetRenderer
 from .exam_sheet_renderer import ExamSheetRenderer
 from .smartphone_renderer import SmartphoneRenderer
 
@@ -14,6 +15,7 @@ class StudentDeskRenderer:
         self.exam_sheet_renderer = ExamSheetRenderer()
         self.calculator_renderer = CalculatorRenderer()
         self.smartphone_renderer = SmartphoneRenderer()
+        self.cheatsheet_renderer = CheatsheetRenderer()
         self.chair_renderer = ChairRenderer()
 
     def draw_cube(self, w, h, d):
@@ -58,3 +60,4 @@ class StudentDeskRenderer:
         self.exam_sheet_renderer.render(transform, state.exam_sheet)
         self.calculator_renderer.render(transform, state.calculator)
         self.smartphone_renderer.render(transform, state.smartphone)
+        self.cheatsheet_renderer.render(transform, state.cheatsheet)

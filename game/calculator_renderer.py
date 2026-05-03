@@ -100,7 +100,7 @@ class CalculatorRenderer:
 
         glTranslatef(0, -0.3, 0)
         # --- SAFE ACTION UPDATE ---
-        self.draw_text("Action: Press [SPACE] to Release", 0.0009, 1.0)
+        self.draw_text("Action: Press [ESC] to Return", 0.0009, 1.0)
         glPopMatrix()
 
         # 3. Right Side: Scaled-Down Calculator

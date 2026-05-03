@@ -112,7 +112,7 @@ class SmartphoneRenderer:
         self.draw_text("Active Application: ChatGPT", 0.0009, 1.0)
 
         glTranslatef(0, -0.3, 0)
-        self.draw_text("Action: Press [SPACE] to Disqualify", 0.0009, 1.0)
+        self.draw_text("Action: Press [ESC] to Return", 0.0009, 1.0)
         glPopMatrix()
 
         # 3. Right Side: Scaled-Down Phone
