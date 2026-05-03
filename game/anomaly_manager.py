@@ -6,12 +6,13 @@ from anomalies.dancing import DancingAnomaly
 from anomalies.forged_id import ForgedIDAnomaly
 from anomalies.pen_swap import PenSwapAnomaly
 from anomalies.seat_swap import SeatSwapAnomaly
-
+from anomalies.cheat_sheet import CheatSheetAnomaly
+from anomalies.exam_swap import ExamSwapAnomaly
+from anomalies.ghost_reappear import GhostReappearAnomaly
 
 class AnomalyManager:
     def __init__(self):
         # Initial probabilities as defined in GDD
-        # Total base = (3 * 5) + (7 * 12.14) = 15 + 84.98 = 99.98%
         self.weights = {
             "Alien": 5.0,
             "Dancing": 5.0,
@@ -30,9 +31,12 @@ class AnomalyManager:
             "SeatSwap": SeatSwapAnomaly(),
             "ForgedID": ForgedIDAnomaly(),
             "PenSwap": PenSwapAnomaly(),
-            "Alien": AlienTransformAnomaly(),
-            "Dancing": DancingAnomaly(),
             "CalcSwap": CalculatorSwapAnomaly(),
+            "AlienTransform": AlienTransformAnomaly(),
+            "Dancing": DancingAnomaly(),
+            "CheatSheet": CheatSheetAnomaly(),
+            "ExamSwap": ExamSwapAnomaly(),
+            "Ghost": GhostReappearAnomaly()
         }
 
     def pick_anomaly(self):
@@ -61,12 +65,17 @@ class AnomalyManager:
             proportion = self.weights[k] / total_other_weight
             self.weights[k] += diff * proportion
 
-    def apply_anomaly(self, anomaly_name, entities):
+    def apply_anomaly(self, anomaly_name, entities, game_manager):
         """
         Main entry point for triggering an anomaly.
         """
         if anomaly_name in self.anomaly_instances:
             instance = self.anomaly_instances[anomaly_name]
+            
+            # Special case for Ghost which needs game_manager context
+            if anomaly_name == "Ghost":
+                return instance.apply(entities, game_manager)
+                
             return instance.apply(entities)
 
         print(f"[AnomalyManager] Warning: {anomaly_name} logic not implemented yet.")

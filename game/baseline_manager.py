@@ -67,4 +67,7 @@ class BaselineManager:
         if snap_desk.smartphone.is_visible != current_desk.smartphone.is_visible: return True
         if snap_desk.cheatsheet.is_visible != current_desk.cheatsheet.is_visible: return True
         
+        # Check Exam Sheet Logs
+        if snap_desk.exam_sheet.extra_logs != current_desk.exam_sheet.extra_logs: return True
+        
         return False
