@@ -7,6 +7,7 @@ class StudentAnimState(Component):
         self.name = name
         self.id_number = id_number
         self.cloth_color = cloth_color
+        self.pen_color = (1.0, 0.0, 0.0) # Default Red
 
         self.is_idle = True
         self.is_walking = False
