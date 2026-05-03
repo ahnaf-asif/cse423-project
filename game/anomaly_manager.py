@@ -5,6 +5,7 @@ from anomalies.pen_swap import PenSwapAnomaly
 from anomalies.alien_transform import AlienTransformAnomaly
 from anomalies.dancing import DancingAnomaly
 from anomalies.cheat_sheet import CheatSheetAnomaly
+from anomalies.exam_swap import ExamSwapAnomaly
 
 class AnomalyManager:
     def __init__(self):
@@ -30,7 +31,8 @@ class AnomalyManager:
             "PenSwap": PenSwapAnomaly(),
             "AlienTransform": AlienTransformAnomaly(),
             "Dancing": DancingAnomaly(),
-            "CheatSheet": CheatSheetAnomaly()
+            "CheatSheet": CheatSheetAnomaly(),
+            "ExamSwap": ExamSwapAnomaly()
         }
 
     def pick_anomaly(self):
