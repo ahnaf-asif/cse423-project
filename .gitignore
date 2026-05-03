@@ -6,6 +6,7 @@
 env/
 venv/
 OpenGL/
+compressed.py
 
 # Ignore Python cache files
 __pycache__/
