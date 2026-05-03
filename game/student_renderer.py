@@ -24,7 +24,7 @@ class StudentRenderer:
         # 1. Colors
         face_color = (0.9, 0.7, 0.6)
         body_color = anim.cloth_color
-        pen_color = (1.0, 0.0, 0.0) if anim.is_writing else None
+        pen_color = anim.pen_color if anim.is_writing else None
         alpha = 1.0
 
         # 2. Setup Ghost/Alien overrides
