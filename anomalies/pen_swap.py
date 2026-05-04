@@ -6,7 +6,6 @@ class PenSwapAnomaly(BaseAnomaly):
         super().__init__("PenSwap")
 
     def get_eligible_entities(self, entities):
-        """Eligible entities are desks with students who currently have Red pens."""
         eligible = []
         for e in entities:
             anim = e.get_component("AnimState")
@@ -20,11 +19,9 @@ class PenSwapAnomaly(BaseAnomaly):
         if not eligible:
             return []
 
-        # At most 1 student can be affected
         target_desk = random.choice(eligible)
         student_state = target_desk.get_component("AnimState")
 
-        # Electric Blue
         new_color = (0.0, 0.5, 1.0)
         print(f"[Anomaly] Pen Swap for {student_state.name}: Red -> Electric Blue")
         student_state.pen_color = new_color

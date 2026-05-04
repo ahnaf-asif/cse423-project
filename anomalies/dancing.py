@@ -6,7 +6,6 @@ class DancingAnomaly(BaseAnomaly):
         super().__init__("Dancing")
 
     def get_eligible_entities(self, entities):
-        """Eligible entities are desks with students who are NOT already dancing."""
         eligible = []
         for e in entities:
             anim = e.get_component("AnimState")
@@ -20,7 +19,6 @@ class DancingAnomaly(BaseAnomaly):
         if not eligible:
             return []
 
-        # Affect 1 or 2 students
         count = min(len(eligible), random.randint(1, 2))
         targets = random.sample(eligible, count)
 

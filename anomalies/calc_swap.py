@@ -6,7 +6,6 @@ class CalcSwapAnomaly(BaseAnomaly):
         super().__init__("CalcSwap")
 
     def get_eligible_entities(self, entities):
-        """Eligible entities are desks with students."""
         return [e for e in entities if e.get_component("AnimState") is not None]
 
     def apply(self, entities):
@@ -15,7 +14,6 @@ class CalcSwapAnomaly(BaseAnomaly):
         if not eligible:
             return []
 
-        # Affect at most 1 student
         target_desk = random.choice(eligible)
         desk_state = target_desk.get_component("StudentDeskState")
         student_state = target_desk.get_component("AnimState")
