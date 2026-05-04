@@ -214,6 +214,55 @@ class GameManager:
         teacher_desk.add_component("TeacherDeskState", TeacherDeskState())
         self.add_entity(teacher_desk)
 
+    def hard_reset(self):
+        """
+        Hard resets the entire game state, entities, and managers.
+        Returns the game to the start menu with a fresh classroom.
+        """
+        print("[GameManager] Hard Resetting...")
+        
+        # 1. Reset Game State
+        self.state = self.STATE_MENU
+        self.previous_state = self.STATE_MENU
+        self.frame_count = 0.0
+        self.objective_text = "OBJECTIVE: Start the exam at your desk."
+        self.is_exam_started = False
+        self.rounds_completed = 0
+        self.is_round_active = False
+        self.disqualified_students = []
+        self.exam_time_left = 60
+        self.current_rules_page = 0
+        
+        # 2. Reset Targeting/Inspection
+        self.target_student = None
+        self.target_desk_entity = None
+        self.inspection_selected_index = 0
+        self.is_viewing_item = False
+        
+        # 3. Clear and Rebuild Entities
+        self.entities = []
+        
+        # 4. Reset Managers
+        self.baseline_manager = BaselineManager()
+        self.anomaly_manager = AnomalyManager()
+        
+        # 5. Re-add Player
+        self.player = Entity("Player")
+        start_transform = Transform(0, 255, 100)
+        start_transform.yaw = 180
+        self.player.add_component("Transform", start_transform)
+        self.add_entity(self.player)
+        
+        # 6. Setup Fresh Classroom
+        self.setup_classroom()
+        
+        # 7. Final adjustments (Sync timer)
+        for entity in self.entities:
+            tds = entity.get_component("TeacherDeskState")
+            if tds:
+                tds.timer.total_seconds = float(self.exam_time_left * 60)
+
+
     def handle_mouse_click(self, button, state, x, y, width, height):
         if button != GLUT_LEFT_BUTTON or state != GLUT_DOWN:
             return
@@ -244,7 +293,7 @@ class GameManager:
                 self.current_rules_page = 0
             # Restart
             elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 - 80 <= ui_y <= height/2 - 80 + btn_h):
-                self.state = self.STATE_MENU
+                self.hard_reset()
             # Quit
             elif (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 - 150 <= ui_y <= height/2 - 150 + btn_h):
                 os._exit(0)
@@ -271,12 +320,7 @@ class GameManager:
         elif self.state == self.STATE_VICTORY:
             btn_w, btn_h = 200, 50
             if (width/2 - btn_w/2 <= x <= width/2 + btn_w/2) and (height/2 - 140 <= ui_y <= height/2 - 140 + btn_h):
-                self.state = self.STATE_MENU
-                # Reset for next game
-                self.exam_time_left = 60
-                self.rounds_completed = 0
-                self.is_exam_started = False
-                self._reset_classroom()
+                self.hard_reset()
 
     def handle_key(self, key):
         if self.state == self.STATE_INSPECTING:
