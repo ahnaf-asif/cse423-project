@@ -772,16 +772,20 @@ class GameManager:
         print("\n" + "="*40)
         print("   NEW ROUND: ANOMALY ROLL")
         print("="*40)
+        print(self.anomaly_manager.get_probability_string())
         
-        # 65% chance for anomaly, 35% for normal
-        if random.random() < 0.65:
+        self.current_round_anomaly = None # Track what happened this round
+        
+        # 60% chance for anomaly, 40% for normal
+        if random.random() < 0.60:
             # Anomaly Occurs
-            # choice = self.anomaly_manager.pick_anomaly() # TEMPORARILY FORCING ANOMALIES
-            choice = random.choice([ "Smartphone"])
-            print(f"\n[Game] ROLL: ANOMALY SELECTED -> {choice} (FORCED FOR TESTING)")
+            choice = self.anomaly_manager.pick_anomaly()
+            self.current_round_anomaly = choice
+            print(f"\n[Game] ROLL: ANOMALY SELECTED -> {choice}")
             affected = self.anomaly_manager.apply_anomaly(choice, self.entities, self)
             if not affected:
                 print("[Game] Roll failed (No eligible students). Room stays NORMAL.")
+                self.current_round_anomaly = None
             else:
                 print(f"[Game] Applied {choice} to: {[e.id for e in affected]}")
         else:
@@ -857,6 +861,12 @@ class GameManager:
             print("[Evaluation] PHASE SUCCESS! -10 Minutes.")
             self.exam_time_left = max(0, self.exam_time_left - 10)
             self.rounds_completed += 1
+
+            # Apply the 2% Rule scaling
+            if self.current_round_anomaly:
+                self.anomaly_manager.scale_probabilities(self.current_round_anomaly)
+                print(f"[Game] Scaling probabilities: {self.current_round_anomaly} reduced to 2%.")
+
             if self.exam_time_left == 0:
                 print("!!! VICTORY !!!")
                 self.state = self.STATE_VICTORY

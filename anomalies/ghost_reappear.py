@@ -39,6 +39,9 @@ class GhostReappearAnomaly(BaseAnomaly):
         
         print(f"[Anomaly] GHOST REAPPEARANCE: {clean_student_state.name} has returned to {target_desk.id} in their BASELINE state.")
         
+        # Mark as writing explicitly
+        clean_student_state.is_writing = True
+        
         # Place the CLEAN state back in the room
         target_desk.add_component("AnimState", clean_student_state)
         
