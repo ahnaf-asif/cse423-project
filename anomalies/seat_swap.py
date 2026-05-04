@@ -1,5 +1,7 @@
 import random
+
 from anomalies.base_anomaly import BaseAnomaly
+
 
 class SeatSwapAnomaly(BaseAnomaly):
     def __init__(self):
@@ -11,14 +13,11 @@ class SeatSwapAnomaly(BaseAnomaly):
 
     def apply(self, entities):
         eligible = self.get_eligible_entities(entities)
-        
+
         # Need at least 2 students to swap
         if len(eligible) < 2:
             return []
 
-        # Randomly select a pair (GDD says 'Two students swap places')
-        # Though the user mentioned 'up to 3', a swap is traditionally a pair.
-        # I'll implement it as a pair swap for now.
         pair = random.sample(eligible, 2)
         desk_a, desk_b = pair[0], pair[1]
 
