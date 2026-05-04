@@ -21,18 +21,18 @@ class CalculatorRenderer:
 
     def _draw_calculator_model(self):
         """Pure geometry of the calculator."""
-        # --- Base Calculator Body ---
+        # Base Calculator Body
         glColor3f(0.2, 0.2, 0.2)
         self.draw_cube(6.0, 9.0, 1.0)
 
-        # --- LCD Screen ---
+        # LCD Screen
         glColor3f(0.6, 0.7, 0.6)
         glPushMatrix()
         glTranslatef(0, 2.5, 0.55)
         self.draw_cube(4.5, 2.0, 0.2)
         glPopMatrix()
 
-        # --- Chunky, Readable Buttons ---
+        # Chunky, Readable Buttons
         for row in range(4):
             for col in range(4):
                 bx = -1.8 + col * 1.2
@@ -67,7 +67,7 @@ class CalculatorRenderer:
         glPushMatrix()
         glLoadIdentity()
 
-        # 1. Full-Screen Dark Overlay
+        # Full-Screen Dark Overlay
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -82,28 +82,28 @@ class CalculatorRenderer:
 
         glEnable(GL_DEPTH_TEST)
 
-        # 2. Left Side: Evidence Text
+        # Left Side: Evidence Text
         glColor3f(1.0, 1.0, 1.0)
         glPushMatrix()
         glTranslatef(-2.8, 1.5, -4.9)
         self.draw_text("EVIDENCE LOG", 0.0015, 1.5)
 
         glTranslatef(0, -0.5, 0)
-        # --- SAFE STATUS UPDATE ---
+        # SAFE STATUS UPDATE
         glColor3f(0.2, 0.9, 0.3)  # Bright, safe green
         self.draw_text("STATUS: AUTHORIZED DEVICE", 0.0009, 1.0)
 
         glTranslatef(0, -0.3, 0)
         glColor3f(0.8, 0.8, 0.8)
-        # --- SAFE NOTES UPDATE ---
+        # SAFE NOTES UPDATE
         self.draw_text("Notes: Standard Non-Programmable Model", 0.0009, 1.0)
 
         glTranslatef(0, -0.3, 0)
-        # --- SAFE ACTION UPDATE ---
+        # SAFE ACTION UPDATE
         self.draw_text("Action: Press [ESC] to Return", 0.0009, 1.0)
         glPopMatrix()
 
-        # 3. Right Side: Scaled-Down Calculator
+        # Right Side: Scaled-Down Calculator
         glPushMatrix()
         glTranslatef(2.0, 0.0, -4.0)
         glRotatef(-10, 1, 0, 0)

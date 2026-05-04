@@ -1,20 +1,19 @@
 import random
-from anomalies.seat_swap import SeatSwapAnomaly
-from anomalies.forged_id import ForgedIDAnomaly
-from anomalies.pen_swap import PenSwapAnomaly
+
 from anomalies.alien_transform import AlienTransformAnomaly
-from anomalies.dancing import DancingAnomaly
-from anomalies.cheat_sheet import CheatSheetAnomaly
-from anomalies.exam_swap import ExamSwapAnomaly
-from anomalies.ghost_reappear import GhostReappearAnomaly
-from anomalies.smartphone import SmartphoneAnomaly
 from anomalies.calc_swap import CalcSwapAnomaly
+from anomalies.cheat_sheet import CheatSheetAnomaly
+from anomalies.dancing import DancingAnomaly
+from anomalies.exam_swap import ExamSwapAnomaly
+from anomalies.forged_id import ForgedIDAnomaly
+from anomalies.ghost_reappear import GhostReappearAnomaly
+from anomalies.pen_swap import PenSwapAnomaly
+from anomalies.seat_swap import SeatSwapAnomaly
+from anomalies.smartphone import SmartphoneAnomaly
+
 
 class AnomalyManager:
     def __init__(self):
-        # Initial probabilities
-        # Fixed: SeatSwap(3), Alien(5), Dancing(5), Ghost(5) = 18%
-        # Remaining: 82% / 6 = 13.67% each
         self.weights = {
             "SeatSwap": 3.0,
             "AlienTransform": 5.0,
@@ -25,10 +24,9 @@ class AnomalyManager:
             "ForgedID": 13.67,
             "PenSwap": 13.67,
             "CalcSwap": 13.67,
-            "Smartphone": 13.65 # Minor adjustment for 100% sum
+            "Smartphone": 13.65,
         }
-        
-        # Instance registry for anomaly logic
+
         self.anomaly_instances = {
             "SeatSwap": SeatSwapAnomaly(),
             "ForgedID": ForgedIDAnomaly(),
@@ -39,13 +37,12 @@ class AnomalyManager:
             "ExamSwap": ExamSwapAnomaly(),
             "Ghost": GhostReappearAnomaly(),
             "Smartphone": SmartphoneAnomaly(),
-            "CalcSwap": CalcSwapAnomaly()
+            "CalcSwap": CalcSwapAnomaly(),
         }
 
     def get_probability_string(self):
         """Returns a formatted string of the current anomaly weights."""
         lines = ["Current Anomaly Probabilities:"]
-        # Sort by weight descending
         sorted_weights = sorted(self.weights.items(), key=lambda x: x[1], reverse=True)
         for name, weight in sorted_weights:
             lines.append(f"  - {name:15}: {weight:5.2f}%")
@@ -64,16 +61,13 @@ class AnomalyManager:
 
         old_weight = self.weights[successful_anomaly]
         self.weights[successful_anomaly] = 2.0
-        
-        # Calculate how much weight we need to redistribute
+
         diff = old_weight - 2.0
-        
-        # Redistribute linearly among other 9 anomalies
+
         other_anomalies = [k for k in self.weights.keys() if k != successful_anomaly]
         total_other_weight = sum(self.weights[k] for k in other_anomalies)
-        
+
         for k in other_anomalies:
-            # Add a portion of the diff based on current relative weight
             proportion = self.weights[k] / total_other_weight
             self.weights[k] += diff * proportion
 
@@ -83,12 +77,12 @@ class AnomalyManager:
         """
         if anomaly_name in self.anomaly_instances:
             instance = self.anomaly_instances[anomaly_name]
-            
+
             # Special case for Ghost which needs game_manager context
             if anomaly_name == "Ghost":
                 return instance.apply(entities, game_manager)
-                
+
             return instance.apply(entities)
-        
+
         print(f"[AnomalyManager] Warning: {anomaly_name} logic not implemented yet.")
         return []

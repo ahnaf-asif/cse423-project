@@ -21,7 +21,7 @@ class TeacherDeskRenderer:
         glutSolidCube(1.0)
         glPopMatrix()
 
-        # Table Legs (Even darker wood/metal)
+        # Table Legs (darker wood/metal)
         glColor3f(0.2, 0.1, 0.05)
         for dx in [-36, 36]:
             for dy in [-21, 21]:
@@ -32,23 +32,20 @@ class TeacherDeskRenderer:
                 glPopMatrix()
 
     def render(self, desk_transform, state):
-        # 1. Render the main desk physical structure
+        # Render the main desk physical structure
         glPushMatrix()
         glTranslatef(desk_transform.x, desk_transform.y, desk_transform.z)
         glRotatef(desk_transform.yaw, 0, 0, 1)
         self._draw_desk_geometry()
-        
+
         # Render the chair behind the teacher desk
         glPushMatrix()
         glTranslatef(0, -30, 0)
         self.chair_renderer._draw_chair()
         glPopMatrix()
-        
+
         glPopMatrix()
 
-        # 2. Render the items on top
-        # Because the TimerRenderer (and presumably LaptopRenderer) handle their own
-        # offsets relative to the base desk transform, we pass the base transform directly to them.
         if hasattr(state, "laptop"):
             self.laptop_renderer.render(desk_transform, state.laptop)
 
