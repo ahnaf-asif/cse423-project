@@ -21,13 +21,13 @@ class StudentRenderer:
     def render(self, transform, anim, frame_count):
         """Extracts data from the components and draws the 3D student."""
 
-        # 1. Colors
+        # Colors
         face_color = (0.9, 0.7, 0.6)
         body_color = anim.cloth_color
         pen_color = anim.pen_color if anim.is_writing else None
         alpha = 1.0
 
-        # 2. Setup Ghost/Alien overrides
+        # Setup Ghost/Alien overrides
         if anim.is_ghost:
             glEnable(GL_BLEND)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -40,21 +40,17 @@ class StudentRenderer:
 
         glPushMatrix()
 
-        # 3. Apply World Transform & Posture Translation
         glTranslatef(transform.x, transform.y, transform.z)
         glRotatef(transform.yaw, 0, 0, 1)
 
         if anim.is_sitting:
-            # Shift to chair position (local to desk)
-            # Y = -25 matches the chair placement in StudentDeskRenderer
-            # Z = 50 puts the torso bottom roughly on the cushion top (Z=30.25)
             glTranslatef(0, -25, 50)
         elif anim.is_walking:
             glTranslatef(0, 0, 15 + abs(math.sin(frame_count * 0.15)) * 3)
         else:
             glTranslatef(0, 0, 15 + math.sin(frame_count * 0.05) * 1.5)
 
-        # 4. Torso & Shirt
+        # Torso & Shirt
         self.draw_cube(30, 15, 40)
         glColor3f(0.9, 0.9, 0.9)
         glPushMatrix()
@@ -62,7 +58,7 @@ class StudentRenderer:
         self.draw_cube(20, 1, 25)
         glPopMatrix()
 
-        # 5. Head
+        #  Head
         glPushMatrix()
         glTranslatef(0, 0, 30)
         if anim.is_dancing:
@@ -70,7 +66,7 @@ class StudentRenderer:
         elif anim.is_walking:
             glRotatef(5 * math.sin(frame_count * 0.15), 0, 1, 0)
         elif anim.is_writing:
-            glRotatef(-25, 1, 0, 0)  # Look down at the paper
+            glRotatef(-25, 1, 0, 0)  
 
         if anim.is_alien:
             glColor3f(*COLOR_ALIEN)
@@ -93,19 +89,17 @@ class StudentRenderer:
                 glPopMatrix()
         glPopMatrix()
 
-        # 6. Arms
+        #  Arms
         for side in [-1, 1]:
             glPushMatrix()
-            glTranslatef(side * 18, 5, 15)  # Shoulder socket
+            glTranslatef(side * 18, 5, 15)  
 
             if anim.is_writing and side == 1:
-                # NEW MATH: Realistic writing motion
                 write_sweep = 8 * math.sin(frame_count * 0.15)
                 write_jitter = 3 * math.cos(frame_count * 0.8)
 
-                # Upper arm (Shoulder) - Point FORWARD toward the desk (225 degrees)
                 glRotatef(225, 1, 0, 0)
-                glRotatef(-15, 0, 1, 0)  # Angle slightly inward toward the paper
+                glRotatef(-15, 0, 1, 0)  
 
                 if anim.is_ghost:
                     glColor4f(0.8, 0.8, 1.0, alpha)
@@ -113,36 +107,31 @@ class StudentRenderer:
                     glColor3f(*body_color)
                 self.draw_cube(7, 7, 15)
 
-                # Forearm (Elbow) - Bends to rest horizontally on desk
                 glTranslatef(0, 0, 15)
-                glRotatef(-45 + write_jitter, 1, 0, 0)  # Up/down stroke motion
-                glRotatef(write_sweep, 0, 1, 0)  # Left/right wiper motion across page
+                glRotatef(-45 + write_jitter, 1, 0, 0)  
+                glRotatef(write_sweep, 0, 1, 0)  
                 self.draw_cube(6, 6, 18)
 
                 # Hand / Pen
                 if pen_color:
-                    glTranslatef(0, 0, 9)  # Move to the end of the forearm
+                    glTranslatef(0, 0, 9)  
                     glPushMatrix()
 
-                    # Angle the pen so it looks like a natural writing grip
                     glRotatef(60, 1, 0, 0)
                     glRotatef(20, 0, 1, 0)
 
                     if not anim.is_ghost:
                         glColor3f(*pen_color)
 
-                    # 1. Pen Body (Shorter, thinner cylinder)
                     gluCylinder(self.quadric, 0.6, 0.6, 8, 10, 1)
 
-                    # 2. Pen Tip (Darker cone shape that actually touches the paper)
                     glTranslatef(0, 0, 8)
                     if not anim.is_ghost:
-                        glColor3f(0.1, 0.1, 0.1)  # Black/Dark ink tip
+                        glColor3f(0.1, 0.1, 0.1)  
                     gluCylinder(self.quadric, 0.6, 0.0, 2.5, 10, 1)
 
                     glPopMatrix()
             else:
-                # Standard Arm Logic (Idle, Sit, Walk, Dance)
                 base_arm = 225 if anim.is_sitting else 180
 
                 if anim.is_walking:
@@ -170,7 +159,7 @@ class StudentRenderer:
                 self.draw_cube(6, 6, 15)
             glPopMatrix()
 
-        # 7. Legs
+        #  Legs
         for side in [-1, 1]:
             glPushMatrix()
             glTranslatef(side * 10, 0, -20)

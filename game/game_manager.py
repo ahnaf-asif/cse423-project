@@ -23,7 +23,6 @@ from OpenGL.GLUT import *
 
 
 class GameManager:
-    # State Constants
     STATE_MENU = 0
     STATE_RULES = 1
     STATE_PLAYING = 2
@@ -37,7 +36,6 @@ class GameManager:
         self.state = self.STATE_MENU
         self.previous_state = self.STATE_MENU
         
-        # UI & Gameplay Managers
         self.ui_renderer = UIRenderer()
         self.baseline_manager = BaselineManager()
         self.anomaly_manager = AnomalyManager()
@@ -59,7 +57,6 @@ class GameManager:
         self.exam_time_left = 60 
         self.current_round_anomaly = None
         
-        # Rules content based on GDD
         self.rules_pages = [
             ["PAGE 1: THE MISSION", "", "Welcome, Invigilator. Your duty is to oversee the final exam.", "", "• BALANCE YOUR WORK: You must complete tasks on your laptop.", "• WATCH THE ROOM: When working, your view is blocked. This is when students strike.", "• CATCH CHEATERS: Look for 'Anomalies'—anything that differs from the starting state of the room.", "• GOAL: Successfully manage the room until the 60-minute timer reaches 0."],
             ["PAGE 2: THE ENVIRONMENT", "", "The classroom has a 4x4 grid of desks containing 12 students and 4 empty desks.", "", "STUDENT PROFILES:", "• Identity: Each student has a unique Name and ID Card.", "• Appearance: Pay attention to clothing colors.", "• Equipment: Standard items include a Pen, Exam Sheet, and sometimes a Calculator.", "• Memory is Key: Study the room at the start."],
@@ -236,7 +233,6 @@ class GameManager:
         for entity in self.entities:
             if "StudentDesk" in entity.id or "TeacherDesk" in entity.id:
                 et = entity.get_component("Transform")
-                # Student desks 70x40, Teacher desk 80x50. Using half-widths for AABB.
                 w, d = (35 + 15, 20 + 15) if "Student" in entity.id else (40 + 15, 25 + 15)
                 if (et.x - w < next_x < et.x + w) and (et.y - d < next_y < et.y + d):
                     return True
@@ -259,14 +255,11 @@ class GameManager:
             if keys.get(b"a"): dx -= rx * MOVE_SPEED * dt; dy -= ry * MOVE_SPEED * dt
             if keys.get(b"d"): dx += rx * MOVE_SPEED * dt; dy += ry * MOVE_SPEED * dt
             
-            # --- Collision Check with Sliding ---
             new_x, new_y = pt.x + dx, pt.y + dy
             if not self.check_collision(new_x, new_y):
                 pt.x, pt.y = new_x, new_y
             else:
-                # Try sliding on X
                 if not self.check_collision(new_x, pt.y): pt.x = new_x
-                # Try sliding on Y
                 elif not self.check_collision(pt.x, new_y): pt.y = new_y
 
             if keys.get("left"): pt.yaw -= ROTATE_SPEED * dt

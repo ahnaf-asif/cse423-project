@@ -26,8 +26,6 @@ class SmartphoneRenderer:
         self.draw_cube(7.5, 14.5, 0.6)
 
         # --- The Cheating Screen ---
-        # Tone down the vibrant screen to a more subtle, deep green
-        # This makes it less cartoony, but still shows a distinct screen color
         glColor3f(0.1, 0.4, 0.2)
         glPushMatrix()
         glTranslatef(0, 0, 0.3)
@@ -35,15 +33,13 @@ class SmartphoneRenderer:
         glPopMatrix()
 
         # --- ChatGPT Title ---
-        # Text is black on the dark green screen
         glColor3f(0.0, 0.0, 0.0)
         glPushMatrix()
         glTranslatef(-2.9, 4.5, 0.38)
         self.draw_text("ChatGPT", 0.008, 3.0)
         glPopMatrix()
 
-        # --- Fake Generated Essay Blocks ---
-        # Slightly darker green than the screen to mimic lines of text
+        # --- Generated Essay Blocks ---
         glColor3f(0.05, 0.25, 0.1)
         glPushMatrix()
         glTranslatef(0, 1.5, 0.38)
@@ -56,14 +52,12 @@ class SmartphoneRenderer:
         glPopMatrix()
 
     def _render_on_desk(self, desk_transform):
-        """Draws the phone resting on the student's desk."""
         glPushMatrix()
         glTranslatef(desk_transform.x, desk_transform.y, desk_transform.z)
         glRotatef(desk_transform.yaw, 0, 0, 1)
 
-        # Position is relative to desk center
         glTranslatef(-22, 10, 41.3)
-        glRotatef(-15, 0, 0, 1)  # Natural slight rotation
+        glRotatef(-15, 0, 0, 1)  
 
         self._draw_phone_model()
         glPopMatrix()
@@ -71,10 +65,10 @@ class SmartphoneRenderer:
     def _render_inspection_hud(self):
         """Draws a simpler, scaled-down inspection overlay."""
         glPushMatrix()
-        glLoadIdentity()  # Reset camera view to draw directly on the screen
+        glLoadIdentity()  
 
-        # 1. Full-Screen Dark Overlay (with blending)
-        glDisable(GL_DEPTH_TEST)  # Ignore scene depth
+        #  Full-Screen Dark Overlay 
+        glDisable(GL_DEPTH_TEST) 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -86,25 +80,19 @@ class SmartphoneRenderer:
         glVertex3f(-50, 50, -5)
         glEnd()
 
-        glEnable(GL_DEPTH_TEST)  # Turn depth back on for HUD elements
+        glEnable(GL_DEPTH_TEST)  
 
-        # 2. Left Side: Evidence Text
+        #  Left Side: Evidence Text
         glColor3f(1.0, 1.0, 1.0)  # White
         glPushMatrix()
 
-        # --- MARGIN UPDATE ---
-        # Changed X from -3.5 to -2.8 to add a healthy padding from the left edge
         glTranslatef(-2.8, 1.5, -4.9)
 
-        # --- SIZE UPDATE ---
-        # Reduced title scale from 0.002 to 0.0015, reduced line weight to 1.5
         self.draw_text("EVIDENCE LOG", 0.0015, 1.5)
 
-        # Tightened vertical line spacing slightly (from -0.6 to -0.5)
         glTranslatef(0, -0.5, 0)
         glColor3f(0.9, 0.2, 0.2)  # Muted red
 
-        # Reduced body scale from 0.0012 to 0.0009, reduced line weight to 1.0
         self.draw_text("STATUS: UNAUTHORIZED DEVICE", 0.0009, 1.0)
 
         glTranslatef(0, -0.3, 0)
@@ -115,7 +103,7 @@ class SmartphoneRenderer:
         self.draw_text("Action: Press [ESC] to Return", 0.0009, 1.0)
         glPopMatrix()
 
-        # 3. Right Side: Scaled-Down Phone
+        # Right Side: Scaled-Down Phone
         glPushMatrix()
         glTranslatef(2.0, 0.0, -4.0)
         glRotatef(-10, 1, 0, 0)
@@ -134,7 +122,6 @@ class SmartphoneRenderer:
             return
 
         if state.is_being_inspected:
-            # Inspection mode creates a full-screen overlay
             self._render_inspection_hud()
         else:
             self._render_on_desk(desk_transform)
