@@ -16,10 +16,10 @@ TYPING_TEXT = (
 class LaptopState(Component):
     def __init__(self):
         self.is_visible = True
-        self.is_being_used = False  # True while the full-screen takeover is active
-        self.is_work_done = False  # Flips to True when timer completes
-        self.work_timer = 0.0  # Accumulates dt while is_being_used is True
-        self.typed_chars = 0  # How many characters have been revealed so far
+        self.is_being_used = False
+        self.is_work_done = False
+        self.work_timer = 0.0
+        self.typed_chars = 0
 
     def start_work(self):
         self.is_being_used = True
