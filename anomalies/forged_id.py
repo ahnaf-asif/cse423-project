@@ -15,7 +15,6 @@ class ForgedIDAnomaly(BaseAnomaly):
         if not eligible:
             return []
 
-        # At most 1 student can be affected
         target_desk = random.choice(eligible)
         student_state = target_desk.get_component("AnimState")
 

@@ -6,7 +6,6 @@ class CheatSheetAnomaly(BaseAnomaly):
         super().__init__("CheatSheet")
 
     def get_eligible_entities(self, entities):
-        """Eligible entities are desks with students where a cheatsheet is NOT visible."""
         eligible = []
         for e in entities:
             anim = e.get_component("AnimState")
@@ -21,7 +20,6 @@ class CheatSheetAnomaly(BaseAnomaly):
         if not eligible:
             return []
 
-        # Affect 1 student
         target_desk = random.choice(eligible)
         desk_state = target_desk.get_component("StudentDeskState")
         student_state = target_desk.get_component("AnimState")

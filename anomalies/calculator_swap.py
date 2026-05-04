@@ -8,7 +8,6 @@ class CalculatorSwapAnomaly(BaseAnomaly):
         super().__init__("CalcSwap")
 
     def get_eligible_entities(self, entities):
-        """Eligible entities are desks that have a student (AnimState)."""
         return [e for e in entities if e.get_component("AnimState") is not None]
 
     def apply(self, entities):
@@ -17,7 +16,6 @@ class CalculatorSwapAnomaly(BaseAnomaly):
         if not eligible:
             return []
 
-        # Pick one student desk to toggle calculator visibility
         target_desk = random.choice(eligible)
         desk_state = target_desk.get_component("StudentDeskState")
 
