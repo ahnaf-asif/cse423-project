@@ -96,11 +96,11 @@ class TimerRenderer:
         All geometry is in a local flat XY plane (Z=0).
         Caller positions via glTranslatef before calling this.
         """
-        DIGIT_SCALE = 1.0  # each digit cell is 6*scale wide, 10*scale tall
-        DIGIT_W = 6.0  # width of one digit in local units
-        COLON_W = 3.0  # width reserved for colon
-        GAP = 0.6  # gap between digits in a pair
-        PAIR_GAP = COLON_W  # gap between pairs (occupied by colon)
+        DIGIT_SCALE = 1.0
+        DIGIT_W = 6.0
+        COLON_W = 3.0
+        GAP = 0.6
+        PAIR_GAP = COLON_W
 
         on_color = (0.15, 0.95, 0.35)  # bright green
         off_color = (0.04, 0.14, 0.06)  # very dim green (ghost segments)
@@ -171,18 +171,13 @@ class TimerRenderer:
         glTranslatef(desk_transform.x, desk_transform.y, desk_transform.z)
         glRotatef(desk_transform.yaw, 0, 0, 1)
 
-        # Shifted left (X=14 instead of 22)
-        # Shifted slightly down the desk toward the player (Y=-15 instead of -10)
-        # Calculated exact Z placement to sit perfectly flush with the desk (Z=41.8)
         glTranslatef(14, -10, 42)
-        glRotatef(90, 1, 0, 0)  # lay flat → stand upright, face toward -Y
+        glRotatef(90, 1, 0, 0)
 
-        # Scaled down a little bit more
         glScalef(0.4, 0.4, 0.4)
 
         self._draw_casing()
 
-        # Shift origin so display is centred inside the casing
         glTranslatef(0.5, 0.5, 0.2)
         self._draw_display(h, m, s, blink_colon)
 

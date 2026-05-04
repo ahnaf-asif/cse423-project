@@ -57,7 +57,7 @@ class LaptopRenderer:
         glEnd()
 
     def _draw_laptop_model(self):
-        # ── Base ─────────────────────────────────────────────────────
+        # Base
         glColor3f(0.20, 0.20, 0.20)
         self.draw_box(-10, -7, 0, 10, 7, 1.6)
 
@@ -73,7 +73,7 @@ class LaptopRenderer:
         glColor3f(0.30, 0.30, 0.30)
         self.draw_box(-10, 6.0, 1.4, 10, 7.2, 2.2)
 
-        # ── Lid ──────────────────────────────────────────────────────
+        # Lid
         LID_Y0 = 6.2
         LID_Y1 = 7.2
         LID_Z0 = 1.8
@@ -82,7 +82,7 @@ class LaptopRenderer:
         glColor3f(0.20, 0.20, 0.20)
         self.draw_box(-10, LID_Y0, LID_Z0, 10, LID_Y1, LID_Z1)
 
-        # ── Screen layers — each at a strictly different Y ────────────
+        # Screen layers — each at a strictly different Y
         # Step 0.04 units forward per layer so no two quads share a plane.
 
         # 1. Outer bezel
@@ -109,9 +109,6 @@ class LaptopRenderer:
         self._draw_laptop_model()
         glPopMatrix()
 
-    # ------------------------------------------------------------------
-    # Interaction HUD
-    # ------------------------------------------------------------------
     def _render_work_hud(self, state, w, h):
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
@@ -136,7 +133,7 @@ class LaptopRenderer:
         glEnd()
 
         # Center the laptop bezel
-        bw, bh = 640, 480 # Bezel width/height
+        bw, bh = 640, 480  # Bezel width/height
         bx = (w - bw) / 2
         by = (h - bh) / 2
 

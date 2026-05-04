@@ -84,17 +84,14 @@ class CheatsheetRenderer:
         self.draw_text("ADDITIONAL DOCUMENT", 0.0015, 1.5)
 
         glTranslatef(0, -0.5, 0)
-        # --- AMBIGUOUS STATUS UPDATE ---
         glColor3f(0.9, 0.6, 0.2)  # Suspicious Orange/Yellow instead of Warning Red
         self.draw_text("STATUS: UNVERIFIED MATERIAL", 0.0009, 1.0)
 
         glTranslatef(0, -0.3, 0)
         glColor3f(0.8, 0.8, 0.8)
-        # --- AMBIGUOUS NOTES UPDATE ---
         self.draw_text("Notes: Non-standard sheet detected.", 0.0009, 1.0)
 
         glTranslatef(0, -0.3, 0)
-        # --- ACTION UPDATE ---
         self.draw_text("Action: Press [ESC] to Return", 0.0009, 1.0)
         glPopMatrix()
 
