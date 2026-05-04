@@ -7,7 +7,7 @@ class UIRenderer:
         pass
 
     def _set_ortho(self, w, h):
-        glDisable(GL_DEPTH_TEST)  # Ensure UI is always on top
+        glDisable(GL_DEPTH_TEST)  
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
         glLoadIdentity()
@@ -15,14 +15,13 @@ class UIRenderer:
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         glLoadIdentity()
-        glColor3f(1, 1, 1) # Reset color to white
-
+        glColor3f(1, 1, 1) 
     def _unset_ortho(self):
         glMatrixMode(GL_PROJECTION)
         glPopMatrix()
         glMatrixMode(GL_MODELVIEW)
         glPopMatrix()
-        glEnable(GL_DEPTH_TEST) # Re-enable for 3D
+        glEnable(GL_DEPTH_TEST) 
 
     def draw_text(self, x, y, text, font=GLUT_BITMAP_HELVETICA_18):
         glRasterPos2f(x, y)
@@ -51,8 +50,7 @@ class UIRenderer:
         glVertex2f(x, y + h)
         glEnd()
 
-        # Center text in button
-        text_w = len(text) * 9 # Rough estimation for Helvetica 18
+        text_w = len(text) * 9 
         self.draw_text(x + (w - text_w) / 2, y + (h - 15) / 2, text)
 
     def render_menu(self, w, h):
@@ -79,7 +77,6 @@ class UIRenderer:
     def render_pause_menu(self, w, h):
         self._set_ortho(w, h)
         
-        # Semi-transparent overlay
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glColor4f(0, 0, 0, 0.6)
@@ -131,10 +128,10 @@ class UIRenderer:
         # Back Button (Left)
         self.draw_button(margin, margin, btn_w, btn_h, "Back")
         
-        # Start/Resume Button (Center) - Always visible
+        # Start/Resume Button (Center)
         self.draw_button(w/2 - btn_w/2, margin, btn_w, btn_h, start_button_label)
 
-        # Next Button (Right) - Only if not on last page
+        # Next Button (Right) 
         if page_idx < total_pages - 1:
             self.draw_button(w - margin - btn_w, margin, btn_w, btn_h, "Next")
 

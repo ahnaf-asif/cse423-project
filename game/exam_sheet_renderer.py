@@ -25,7 +25,7 @@ class ExamSheetRenderer:
         glColor3f(0.95, 0.95, 0.95)  # Bright white paper
         self.draw_cube(20, 26, 0.1)
 
-        # --- Printed Text / Layout (simulated with thin cubes) ---
+        # --- Printed Text 
         glColor3f(0.1, 0.1, 0.1)  # Black ink
 
         # Exam Header (Title)
@@ -53,7 +53,7 @@ class ExamSheetRenderer:
         glTranslatef(desk_transform.x, desk_transform.y, desk_transform.z)
         glRotatef(desk_transform.yaw, 0, 0, 1)
 
-        # Centered / slightly off-center on the student desk
+        # Centered on the student desk
         glTranslatef(10, -5, 41.05)
         glRotatef(-5, 0, 0, 1)  # Slight casual rotation
 
@@ -65,7 +65,7 @@ class ExamSheetRenderer:
         glPushMatrix()
         glLoadIdentity()
 
-        # 1. Full-Screen Dark Overlay
+        # Full-Screen Dark Overlay
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -80,7 +80,7 @@ class ExamSheetRenderer:
 
         glEnable(GL_DEPTH_TEST)
 
-        # 2. Left Side: HUD Text
+        # Left Side: HUD Text
         glColor3f(1.0, 1.0, 1.0)
         glPushMatrix()
         glTranslatef(-2.8, 1.5, -4.9)
@@ -100,7 +100,6 @@ class ExamSheetRenderer:
         if hasattr(state, "extra_logs"):
             for log_str in state.extra_logs:
                 glTranslatef(0, -0.3, 0)
-                # Drawing the custom strings passed from the state
                 self.draw_text(log_str, 0.0009, 1.0)
 
         glTranslatef(0, -0.3, 0)
@@ -108,13 +107,13 @@ class ExamSheetRenderer:
         self.draw_text("Action: Press [ESC] to Return", 0.0009, 1.0)
         glPopMatrix()
 
-        # 3. Right Side: Scaled-Down Paper
+        #  Right Side: Scaled-Down Paper
         glPushMatrix()
         glTranslatef(2.0, 0.0, -4.0)
         glRotatef(-15, 1, 0, 0)
         glRotatef(-10, 0, 1, 0)
 
-        glScalef(0.12, 0.12, 0.12)  # Scale down to fit the screen
+        glScalef(0.12, 0.12, 0.12)  
         self._draw_paper_model()
         glPopMatrix()
 
@@ -126,7 +125,6 @@ class ExamSheetRenderer:
             return
 
         if state.is_being_inspected:
-            # Pass the state to the HUD method so it can access the extra strings
             self._render_inspection_hud(state)
         else:
             self._render_on_desk(desk_transform)
