@@ -39,35 +39,49 @@ class BaselineManager:
                     del entity.components["AnimState"]
 
     def is_desk_anomalous(self, entity):
-        """Helper to check if a specific desk differs from the baseline."""
+        """Fundamental check: Does this entity differ from its fair baseline?"""
         if entity.id not in self.snapshot:
             return False
             
         snap = self.snapshot[entity.id]
         current_anim = entity.get_component("AnimState")
+        current_desk = entity.get_component("StudentDeskState")
         
-        # 1. Occupancy check
+        # 1. Presence / Occupancy check
         if (snap["anim_state"] is None) != (current_anim is None):
+            print(f"[Trace] {entity.id}: Occupancy mismatch. Baseline: {snap['anim_state'] is not None}, Current: {current_anim is not None}")
             return True
             
-        # 2. Student Identity check
+        # 2. Identity & State flags (If both have students)
         if snap["anim_state"] and current_anim:
-            if snap["anim_state"].name != current_anim.name: return True
-            if snap["anim_state"].id_number != current_anim.id_number: return True
-            if snap["anim_state"].cloth_color != current_anim.cloth_color: return True
-            if snap["anim_state"].pen_color != current_anim.pen_color: return True
-            if snap["anim_state"].is_alien != current_anim.is_alien: return True
-            if snap["anim_state"].is_ghost != current_anim.is_ghost: return True
-            if snap["anim_state"].is_dancing != current_anim.is_dancing: return True
+            s = snap["anim_state"]
+            c = current_anim
+            if s.name != c.name: 
+                print(f"[Trace] {entity.id}: Name mismatch. Baseline: {s.name}, Current: {c.name}"); return True
+            if s.id_number != c.id_number: 
+                print(f"[Trace] {entity.id}: ID mismatch. Baseline: {s.id_number}, Current: {c.id_number}"); return True
+            if s.cloth_color != c.cloth_color: 
+                print(f"[Trace] {entity.id}: Cloth mismatch. Baseline: {s.cloth_color}, Current: {c.cloth_color}"); return True
+            if s.pen_color != c.pen_color: 
+                print(f"[Trace] {entity.id}: Pen mismatch. Baseline: {s.pen_color}, Current: {c.pen_color}"); return True
+            if s.is_alien != c.is_alien: 
+                print(f"[Trace] {entity.id}: Alien flag mismatch. Baseline: {s.is_alien}, Current: {c.is_alien}"); return True
+            if s.is_dancing != c.is_dancing: 
+                print(f"[Trace] {entity.id}: Dancing flag mismatch. Baseline: {s.is_dancing}, Current: {c.is_dancing}"); return True
+            if s.is_ghost != c.is_ghost: 
+                print(f"[Trace] {entity.id}: Ghost flag mismatch. Baseline: {s.is_ghost}, Current: {c.is_ghost}"); return True
             
-        # 3. Desk Items check
-        current_desk = entity.get_component("StudentDeskState")
-        snap_desk = snap["desk_state"]
-        if snap_desk.calculator.is_visible != current_desk.calculator.is_visible: return True
-        if snap_desk.smartphone.is_visible != current_desk.smartphone.is_visible: return True
-        if snap_desk.cheatsheet.is_visible != current_desk.cheatsheet.is_visible: return True
-        
-        # Check Exam Sheet Logs
-        if snap_desk.exam_sheet.extra_logs != current_desk.exam_sheet.extra_logs: return True
+        # 3. Item Configuration
+        if snap["desk_state"] and current_desk:
+            s_d = snap["desk_state"]
+            c_d = current_desk
+            if s_d.calculator.is_visible != c_d.calculator.is_visible: 
+                print(f"[Trace] {entity.id}: Calc visibility mismatch."); return True
+            if s_d.smartphone.is_visible != c_d.smartphone.is_visible: 
+                print(f"[Trace] {entity.id}: Phone visibility mismatch."); return True
+            if s_d.cheatsheet.is_visible != c_d.cheatsheet.is_visible: 
+                print(f"[Trace] {entity.id}: Cheatsheet visibility mismatch."); return True
+            if s_d.exam_sheet.extra_logs != c_d.exam_sheet.extra_logs: 
+                print(f"[Trace] {entity.id}: Exam sheet logs mismatch."); return True
         
         return False
