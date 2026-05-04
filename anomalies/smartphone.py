@@ -1,5 +1,7 @@
 import random
+
 from anomalies.base_anomaly import BaseAnomaly
+
 
 class SmartphoneAnomaly(BaseAnomaly):
     def __init__(self):
@@ -17,7 +19,7 @@ class SmartphoneAnomaly(BaseAnomaly):
 
     def apply(self, entities):
         eligible = self.get_eligible_entities(entities)
-        
+
         if not eligible:
             return []
 
@@ -25,9 +27,11 @@ class SmartphoneAnomaly(BaseAnomaly):
         target_desk = random.choice(eligible)
         desk_state = target_desk.get_component("StudentDeskState")
         student_state = target_desk.get_component("AnimState")
-        
-        print(f"[Anomaly] SMARTPHONE SWAP: {student_state.name}'s calculator turned into a SMARTPHONE at {target_desk.id}")
-        
+
+        print(
+            f"[Anomaly] SMARTPHONE SWAP: {student_state.name}'s calculator turned into a SMARTPHONE at {target_desk.id}"
+        )
+
         # Transformation: Replace calculator with smartphone
         desk_state.calculator.is_visible = False
         desk_state.smartphone.is_visible = True

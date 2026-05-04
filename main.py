@@ -17,9 +17,16 @@ window_height = 800
 
 # Track keys
 key_states = {
-    b"w": False, b"a": False, b"s": False, b"d": False,
-    "left": False, "right": False, "up": False, "down": False,
-    b"e": False, b" ": False
+    b"w": False,
+    b"a": False,
+    b"s": False,
+    b"d": False,
+    "left": False,
+    "right": False,
+    "up": False,
+    "down": False,
+    b"e": False,
+    b" ": False,
 }
 
 
@@ -27,13 +34,12 @@ def setupCamera():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(70, window_width / window_height, 0.5, 5000)
-    
+
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    # Get player transform
     player_transform = game.player.get_component("Transform")
-    
+
     yaw_r = math.radians(player_transform.yaw)
     pitch_r = math.radians(player_transform.pitch)
 
@@ -43,9 +49,15 @@ def setupCamera():
     look_z = math.sin(pitch_r)
 
     gluLookAt(
-        player_transform.x, player_transform.y, player_transform.z,
-        player_transform.x + look_x, player_transform.y + look_y, player_transform.z + look_z,
-        0, 0, 1
+        player_transform.x,
+        player_transform.y,
+        player_transform.z,
+        player_transform.x + look_x,
+        player_transform.y + look_y,
+        player_transform.z + look_z,
+        0,
+        0,
+        1,
     )
 
 
@@ -84,26 +96,25 @@ def specialKeyUpListener(key, x, y):
 
 
 def keyboardListener(key, x, y):
-    # 1. Isolate Inspection Input
+    # Isolate Inspection Input
     if game.state == game.STATE_INSPECTING:
         game.handle_key(key)
         return
-    
-    # 2. Isolate Laptop Takeover (Only while playing)
+
+    # Isolate Laptop Takeover (Only while playing)
     if game.state == game.STATE_PLAYING and game.is_laptop_active():
         if key == b" ":
             game.dismiss_laptop()
-        # All other keys (including ESC) do nothing
         return
 
-    # 3. Track key states for movement
+    # Track key states for movement
     if key in key_states:
         key_states[key] = True
         if key not in [b"e", b" ", b"q", b"f"]:
             return
 
-    # 3. Handle System Keys
-    if key == b"\x1b": # ESC
+    # Handle System Keys
+    if key == b"\x1b":  # ESC
         if game.state == game.STATE_PLAYING:
             game.state = game.STATE_PAUSE
         elif game.state == game.STATE_PAUSE:
@@ -130,11 +141,11 @@ def keyboardUpListener(key, x, y):
 
 def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    
+
     # Setup 3D camera for all states that render the classroom background
     if game.state in [game.STATE_PLAYING, game.STATE_PAUSE, game.STATE_INSPECTING]:
         setupCamera()
-    
+
     game.render(window_width, window_height)
     glutSwapBuffers()
 
@@ -155,7 +166,7 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(window_width, window_height)
     glutInitWindowPosition(50, 50)
-    glutCreateWindow(b"Nokol Ar Hobe Na - ECS Engine")
+    glutCreateWindow(b"Nokol Ar Hobe Na")
     glEnable(GL_DEPTH_TEST)
     last_time = glutGet(GLUT_ELAPSED_TIME)
 
