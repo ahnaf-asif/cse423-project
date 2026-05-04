@@ -7,14 +7,9 @@ from core.component import Component
 
 class TeacherDeskState(Component):
     def __init__(self):
-        # Initialize the nested states for the teacher's items
         self.laptop = LaptopState()
         self.timer = TimerState()
         self.chair = ChairState()
-
-        # Teacher desk is 80x50. Chair is 26x26 at (0, -30).
-        # Bounds: Min Y = -43, Max Y = 25.
-        # Total depth = 68. Center Y = (25-43)/2 = -9.
         self.collider = Collider(width=80, depth=68, offset_x=0, offset_y=-9)
 
     def get_collider(self):
